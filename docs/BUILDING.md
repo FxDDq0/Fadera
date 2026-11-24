@@ -1,4 +1,4 @@
-# Building Mixora from source
+# Building Fadera from source
 
 ## Repository layout
 
@@ -34,9 +34,9 @@ cd packages\x32_core; dart test; cd ..\x32_sim; dart test; cd ..\..\app; flutter
 cd app; flutter build windows --release; cd ..
 cd packages\x32_sim; dart compile exe bin\x32_sim.dart -o ..\..\build\x32_sim.exe; cd ..\..
 
-# portable package (dist\Mixora-<version>-windows-x64.zip) and installer (dist\Mixora-<version>-setup.exe)
+# portable package (dist\Fadera-<version>-windows-x64.zip) and installer (dist\Fadera-<version>-setup.exe)
 powershell -File tools\package.ps1
-& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" installer\Mixora.iss   # or the path of your Inno Setup install
+& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" installer\Fadera.iss   # or the path of your Inno Setup install
 ```
 
 The version comes from `branding/brand.json`. After changing it run `python -I tools/brand_apply.py`, which updates the app constants, the Windows version resource and the installer script.

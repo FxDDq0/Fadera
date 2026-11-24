@@ -10,7 +10,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Mixora version
+      label: Fadera version
       description: Settings → Informazioni
       placeholder: "1.0.0"
     validations:

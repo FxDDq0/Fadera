@@ -2,14 +2,14 @@
 
 ## Current status
 
-Mixora's installer and executable are **not digitally signed**. No certificate is used, and none is simulated.
+Fadera's installer and executable are **not digitally signed**. No certificate is used, and none is simulated.
 
 On first run Windows Defender SmartScreen may show **"Windows protected your PC"**. This does not mean the file is harmful; it means the file is not signed and has no download reputation yet.
 
 To check that the file is the one published by the project:
 
 ```powershell
-Get-FileHash .\Mixora-<version>-setup.exe -Algorithm SHA256
+Get-FileHash .\Fadera-<version>-setup.exe -Algorithm SHA256
 ```
 
 Compare the result with the `.sha256` file attached to the GitHub release. If they match, choose *More info → Run anyway*.
@@ -23,4 +23,4 @@ Compare the result with the `.sha256` file attached to the GitHub release. If th
 | EV code-signing certificate | Highest cost; historically gave immediate SmartScreen reputation. |
 | SignPath Foundation (for open-source projects) | Free signing for qualifying open-source projects; requires an OSI-approved license and an application. |
 
-If a certificate is obtained, the workflow can sign `Mixora.exe` and the installer with `signtool` using secrets stored in GitHub (never in the repository).
+If a certificate is obtained, the workflow can sign `Fadera.exe` and the installer with `signtool` using secrets stored in GitHub (never in the repository).

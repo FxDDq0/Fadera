@@ -267,7 +267,7 @@ class _ChannelColorsSectionState extends State<_ChannelColorsSection> {
       MxPageHeader(
         title: tr('Colori dei canali'),
         subtitle: tr('Seleziona uno o più canali (anche un gruppo intero), poi scegli un colore del mixer o un colore locale. '
-            'Il colore del mixer viene inviato alla console; il colore locale resta solo in Mixora.'),
+            'Il colore del mixer viene inviato alla console; il colore locale resta solo in Fadera.'),
       ),
       Row(children: [
         Expanded(child: MxSegmented<int>(options: [for (var i = 0; i < _groups.length; i++) (i, _groups[i].$1)], value: _group, expand: true, onChanged: (v) => setState(() => _group = v))),
@@ -345,7 +345,7 @@ class _ChannelColorsSectionState extends State<_ChannelColorsSection> {
                 ]),
               ),
               MxLabeled(
-                tr('Colore locale (solo in Mixora)'),
+                tr('Colore locale (solo in Fadera)'),
                 Row(mainAxisSize: MainAxisSize.min, children: [
                   MxButton(
                     label: tr('Scegli…'),
@@ -399,7 +399,7 @@ class _ProfilesSection extends StatelessWidget {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       MxPageHeader(
         title: tr('Profili salvati'),
-        subtitle: tr('Un profilo contiene tutto l’aspetto di Mixora su questo PC: tema, palette, colori locali, layout della barra rapida, layer utente, modalità touch e meter. '
+        subtitle: tr('Un profilo contiene tutto l’aspetto di Fadera su questo PC: tema, palette, colori locali, layout della barra rapida, layer utente, modalità touch e meter. '
             'Nomi, colori e icone del mixer non sono inclusi: stanno nelle scene della console.'),
         actions: [
           MxButton(

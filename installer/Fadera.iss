@@ -1,13 +1,13 @@
-﻿; Script Inno Setup per Mixora (Windows x64). GENERATO da tools/brand_apply.py.
+﻿; Script Inno Setup per Fadera (Windows x64). GENERATO da tools/brand_apply.py.
 ; Compilazione (richiede Inno Setup 6), dopo tools/package.ps1:
-;   ISCC.exe installer\Mixora.iss
-; Cartella di installazione, identificativo e preferenze sono propri di Mixora:
+;   ISCC.exe installer\Fadera.iss
+; Cartella di installazione, identificativo e preferenze sono propri di Fadera:
 ; nessun file di altri programmi viene letto, modificato o sovrascritto.
 
-#define AppName "Mixora"
+#define AppName "Fadera"
 #define AppVersion "1.0.0"
-#define AppExe "Mixora.exe"
-#define SrcDir "..\dist\Mixora-1.0.0-windows-x64"
+#define AppExe "Fadera.exe"
+#define SrcDir "..\dist\Fadera-1.0.0-windows-x64"
 ; versione numerica per le proprietà del file (es. "1.0.0-beta.1" -> "1.0.0")
 #if Pos("-", AppVersion) > 0
   #define AppVersionNum Copy(AppVersion, 1, Pos("-", AppVersion) - 1)
@@ -20,15 +20,15 @@ AppId={{8C1F4D52-6B3E-4A7D-9E21-5F0C7A3B9D46}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
-AppPublisher=Progetto Mixora
-AppCopyright=© 2026 Progetto Mixora
-DefaultDirName={autopf}\Mixora
-DefaultGroupName=Mixora
+AppPublisher=Progetto Fadera
+AppCopyright=© 2026 Progetto Fadera
+DefaultDirName={autopf}\Fadera
+DefaultGroupName=Fadera
 ; la cartella di installazione si può sempre scegliere
 DisableDirPage=no
 DisableProgramGroupPage=yes
 OutputDir=..\dist
-OutputBaseFilename=Mixora-{#AppVersion}-setup
+OutputBaseFilename=Fadera-{#AppVersion}-setup
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
@@ -44,7 +44,7 @@ VersionInfoProductName={#AppName}
 VersionInfoProductVersion={#AppVersionNum}
 VersionInfoProductTextVersion={#AppVersion}
 VersionInfoDescription={#AppName} setup
-SetupIconFile=..\branding\out\Mixora.ico
+SetupIconFile=..\branding\out\Fadera.ico
 #if FileExists(AddBackslash(SourcePath) + "..\LICENSE")
 ; licenza mostrata durante l'installazione (GPL-3.0-or-later nel repository pubblico)
 LicenseFile=..\LICENSE
@@ -52,7 +52,7 @@ LicenseFile=..\LICENSE
 UninstallDisplayIcon={app}\{#AppExe}
 UninstallDisplayName={#AppName} {#AppVersion}
 CloseApplications=yes
-; Le preferenze in %APPDATA%\Mixora restano dopo la disinstallazione (si possono cancellare a mano).
+; Le preferenze in %APPDATA%\Fadera restano dopo la disinstallazione (si possono cancellare a mano).
 
 [Languages]
 Name: "en"; MessagesFile: "compiler:Default.isl"

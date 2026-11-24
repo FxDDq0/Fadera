@@ -1,6 +1,6 @@
 # Network setup
 
-Mixora and the mixer must be on the **same local network** (same subnet). Internet access is not required.
+Fadera and the mixer must be on the **same local network** (same subnet). Internet access is not required.
 
 ## Typical setups
 
@@ -16,8 +16,8 @@ The mixer's IP address is shown on the mixer under **Setup → Network** (DHCP o
 
 ## Firewall and ports
 
-* Protocol: UDP, port **10023** on the mixer. Mixora uses a random local port for the replies.
-* Windows Firewall normally allows the replies to Mixora's own requests. If a third-party firewall blocks them, allow `Mixora.exe` on the network you use with the mixer.
+* Protocol: UDP, port **10023** on the mixer. Fadera uses a random local port for the replies.
+* Windows Firewall normally allows the replies to Fadera's own requests. If a third-party firewall blocks them, allow `Fadera.exe` on the network you use with the mixer.
 
 ## When the mixer is not found
 
@@ -29,4 +29,4 @@ The Connect window lists the network adapters it searched and explains the most 
 
 ## PC with two networks (Internet + mixer)
 
-You can keep Internet on one adapter (for example USB tethering from a phone or another Ethernet port) and the mixer on another (for example the router's Wi-Fi). Mixora searches on every adapter.
+You can keep Internet on one adapter (for example USB tethering from a phone or another Ethernet port) and the mixer on another (for example the router's Wi-Fi). Fadera searches on every adapter.

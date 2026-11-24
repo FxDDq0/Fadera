@@ -1,15 +1,15 @@
 {
   "_nota": "Unica fonte del marchio. Dopo una modifica: python -I tools/brand_apply.py, poi ricompilare.",
-  "name": "Mixora",
-  "exeName": "Mixora",
+  "name": "Fadera",
+  "exeName": "Fadera",
   "tagline": "Controller professionale per mixer digitali",
-  "publisher": "Progetto Mixora",
-  "copyright": "© 2026 Progetto Mixora",
+  "publisher": "Progetto Fadera",
+  "copyright": "© 2026 Progetto Fadera",
   "website": "",
   "version": "1.0.0",
   "build": 7,
-  "appDataFolder": "Mixora",
-  "packageId": "app.mixora.controller",
+  "appDataFolder": "Fadera",
+  "packageId": "app.fadera.controller",
   "windowsInstallerAppId": "8C1F4D52-6B3E-4A7D-9E21-5F0C7A3B9D46",
   "colors": {
     "background": "#0E1117",
@@ -20,5 +20,5 @@
     "signal": "#3E8EFA",
     "accent": "#F2C230"
   },
-  "compatibility": "Pensato per i mixer della famiglia Behringer X32 / Midas M32 (protocollo OSC); verificato solo su Behringer X32 Producer con firmware 4.15. Mixora è un progetto indipendente: non è affiliato, approvato o sostenuto da Behringer, Midas o Music Tribe. I nomi X32 e M32 e i rispettivi marchi appartengono ai loro proprietari."
+  "compatibility": "Pensato per i mixer della famiglia Behringer X32 / Midas M32 (protocollo OSC); verificato solo su Behringer X32 Producer con firmware 4.15. Fadera è un progetto indipendente: non è affiliato, approvato o sostenuto da Behringer, Midas o Music Tribe. I nomi X32 e M32 e i rispettivi marchi appartengono ai loro proprietari."
 }

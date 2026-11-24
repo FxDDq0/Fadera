@@ -1,4 +1,4 @@
-# Build, test and package Mixora for Windows x64.
+# Build, test and package Fadera for Windows x64.
 # * every push / pull request: tests, release build, portable ZIP, installer, SHA-256 (as workflow artifacts);
 # * a separate job installs the package on a fresh Windows runner (no Flutter) and uninstalls it;
 # * a tag "v*" (for example v1.0.0) also creates a DRAFT GitHub Release with the files attached,
@@ -80,7 +80,7 @@ jobs:
       - name: Installer
         shell: pwsh
         run: |
-          & $env:ISCC installer\Mixora.iss
+          & $env:ISCC installer\Fadera.iss
           if ($LASTEXITCODE) { exit 1 }
           Get-ChildItem dist\*-setup.exe | ForEach-Object {
             $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
@@ -90,7 +90,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: mixora-windows-x64
+          name: fadera-windows-x64
           path: |
             dist/*.zip
             dist/*-setup.exe
@@ -105,7 +105,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: mixora-windows-x64
+          name: fadera-windows-x64
           path: dist
 
       - name: Verify SHA-256
@@ -122,18 +122,18 @@ jobs:
         shell: pwsh
         run: |
           $setup = (Get-ChildItem dist\*-setup.exe)[0].FullName
-          $dir = "$env:RUNNER_TEMP\MixoraTest"
+          $dir = "$env:RUNNER_TEMP\FaderaTest"
           $p = Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER',"/DIR=$dir" -Wait -PassThru
           if ($p.ExitCode) { throw "install failed: $($p.ExitCode)" }
-          foreach ($f in 'Mixora.exe','flutter_windows.dll','vcruntime140.dll','data\app.so','data\flutter_assets\NOTICES.Z','simulatore\x32_sim.exe') {
+          foreach ($f in 'Fadera.exe','flutter_windows.dll','vcruntime140.dll','data\app.so','data\flutter_assets\NOTICES.Z','simulatore\x32_sim.exe') {
             if (-not (Test-Path (Join-Path $dir $f))) { throw "missing after install: $f" }
           }
-          (Get-Item (Join-Path $dir 'Mixora.exe')).VersionInfo | Format-List ProductName, ProductVersion, FileVersion
+          (Get-Item (Join-Path $dir 'Fadera.exe')).VersionInfo | Format-List ProductName, ProductVersion, FileVersion
           # standalone simulator starts on 127.0.0.1 (pure Dart, no Flutter needed)
           $sim = Start-Process (Join-Path $dir 'simulatore\x32_sim.exe') -ArgumentList '--port','10050' -PassThru
           Start-Sleep 3; if ($sim.HasExited) { throw "simulator exited" }; Stop-Process $sim.Id -Force
           # the application starts (informative: the runner desktop may not allow a GPU window)
-          $app = Start-Process (Join-Path $dir 'Mixora.exe') -PassThru
+          $app = Start-Process (Join-Path $dir 'Fadera.exe') -PassThru
           Start-Sleep 10; $app.Refresh()
           "application running after 10 s: $(-not $app.HasExited)"
           if (-not $app.HasExited) { Stop-Process $app.Id -Force }
@@ -141,7 +141,7 @@ jobs:
           if ($p.ExitCode) { throw "reinstall failed: $($p.ExitCode)" }
           $u = Start-Process (Join-Path $dir 'unins000.exe') -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
           Start-Sleep 3
-          if (Test-Path (Join-Path $dir 'Mixora.exe')) { throw "files left after uninstall" }
+          if (Test-Path (Join-Path $dir 'Fadera.exe')) { throw "files left after uninstall" }
           "install / reinstall / uninstall OK"
 
   release:
@@ -154,7 +154,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: mixora-windows-x64
+          name: fadera-windows-x64
           path: dist
       - uses: softprops/action-gh-release@v2
         with:

@@ -3,7 +3,7 @@
 /// 1366×768…). Le immagini sono prodotte dal motore grafico dell'app (stesso albero di
 /// widget, stessi font di sistema), senza catturare lo schermo dell'utente.
 ///
-/// Uso: Mixora.exe --capture=<cartella> [--sim-port=10023]
+/// Uso: Fadera.exe --capture=<cartella> [--sim-port=10023]
 library;
 
 import 'dart:async';

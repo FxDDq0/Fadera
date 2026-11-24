@@ -1,9 +1,11 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="branding/out/logo_scuro.svg">
-    <img src="branding/out/logo_chiaro.svg" alt="Mixora" width="360">
+    <img src="branding/out/logo_chiaro.svg" alt="Fadera" width="360">
   </picture>
 </p>
+
+<h1 align="center">Fadera — X32/M32 mixer controller</h1>
 
 <p align="center"><b>A desktop controller for Behringer X32 / Midas M32 family digital mixers</b><br>
 Windows x64 · OSC over your local network · independent project</p>
@@ -16,14 +18,14 @@ Windows x64 · OSC over your local network · independent project</p>
   <a href="README.it.md">Italiano</a>
 </p>
 
-![Mixora mixer view](docs/images/mixer.png)
+![Fadera mixer view](docs/images/mixer.png)
 
-> **Mixora is an independent project.** It is not affiliated with, endorsed or supported by Behringer, Midas or Music Tribe.
+> **Fadera is an independent project.** It is not affiliated with, endorsed or supported by Behringer, Midas or Music Tribe.
 > X32 and M32 are trademarks of their respective owners and are used here only to describe compatibility.
 
 ## What it does
 
-Mixora controls a digital mixer from a Windows PC over the network, using the mixer's OSC remote protocol.
+Fadera controls a digital mixer from a Windows PC over the network, using the mixer's OSC remote protocol.
 
 * **Mixer view** with 8 or 16 channel strips per page, Aux/FX returns, buses, matrices, main and DCA.
 * **Channel editor:** gain/trim, phase, high-pass filter, delay, gate and compressor with live **gain reduction**, 4-band parametric EQ with graph, sends.
@@ -33,7 +35,7 @@ Mixora controls a digital mixer from a Windows PC over the network, using the mi
 * **User layer**: build your own page of strips from any category.
 * **Quick controls** bar, keyboard shortcuts, colour themes, touch mode.
 * **Safe by design:** connecting only *reads* the mixer state; nothing is changed until you move a control. Commands typed while the mixer is unreachable are discarded, never replayed later.
-* **Built-in simulator:** try Mixora without a mixer.
+* **Built-in simulator:** try Fadera without a mixer.
 * **Six languages:** English, Italiano, Español, Français, Deutsch, Português (automatic from Windows, or chosen in *Settings*).
 
 | Channel EQ | Compressor with gain reduction | Effects |
@@ -60,23 +62,23 @@ Not yet verified on hardware even on the X32 Producer: effects changes, scene sa
 
 ## Installation
 
-1. Download `Mixora-<version>-setup.exe` from the [latest release](../../releases/latest).
+1. Download `Fadera-<version>-setup.exe` from the [latest release](../../releases/latest).
 2. Optionally verify the download against the `.sha256` file published with the release:
-   `Get-FileHash .\Mixora-<version>-setup.exe -Algorithm SHA256`
+   `Get-FileHash .\Fadera-<version>-setup.exe -Algorithm SHA256`
 3. Run the installer. By default it installs for the current user only and **does not need administrator rights**; you can choose a folder and an optional desktop shortcut.
 
-A portable ZIP is also available: extract it anywhere and run `Mixora.exe`.
+A portable ZIP is also available: extract it anywhere and run `Fadera.exe`.
 
 > **Windows SmartScreen:** the installer is not yet digitally signed, so Windows may show "Windows protected your PC". Choose *More info → Run anyway* only if the file's SHA-256 matches the published one. See [docs/CODE_SIGNING.md](docs/CODE_SIGNING.md).
 
-Uninstall from *Settings → Apps → Installed apps*. Your preferences in `%APPDATA%\Mixora` are kept; delete that folder to remove them.
+Uninstall from *Settings → Apps → Installed apps*. Your preferences in `%APPDATA%\Fadera` are kept; delete that folder to remove them.
 
 ## Connecting to the mixer
 
 1. Connect the PC to the **same network as the mixer**: the same router/switch by cable, or that router's Wi-Fi. A phone hotspot is a different network and will not see the mixer.
-2. Start Mixora. On first launch a short welcome screen offers **Search for the mixer** or **Try with the simulator**.
-3. Mixora searches on every network adapter. Pick your mixer, or type its IP address (shown on the mixer under *Setup → Network*).
-4. Mixora reads the mixer state (Mixer → PC). Nothing is written to the mixer during this step.
+2. Start Fadera. On first launch a short welcome screen offers **Search for the mixer** or **Try with the simulator**.
+3. Fadera searches on every network adapter. Pick your mixer, or type its IP address (shown on the mixer under *Setup → Network*).
+4. Fadera reads the mixer state (Mixer → PC). Nothing is written to the mixer during this step.
 
 If no mixer is found, the Connect window explains why (for example *"the PC is on a different network"*). More in [docs/NETWORK_SETUP.md](docs/NETWORK_SETUP.md).
 
@@ -88,7 +90,7 @@ See [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md). In short: only Windo
 
 Please open an [issue](../../issues/new/choose) and include:
 
-* Mixora version (*Settings → Informazioni*), Windows version, mixer model and firmware;
+* Fadera version (*Settings → Informazioni*), Windows version, mixer model and firmware;
 * what you did and what happened;
 * the diagnostics file exported from *Settings → Diagnostica* (review it first: it contains your mixer's IP address and channel names).
 
@@ -100,7 +102,7 @@ See [docs/BUILDING.md](docs/BUILDING.md). The project uses Flutter (Windows desk
 
 ## License
 
-Mixora is free software, released under the **GNU General Public License, version 3 or (at your option) any later version** (GPL-3.0-or-later). See [LICENSE](LICENSE).
+Fadera is free software, released under the **GNU General Public License, version 3 or (at your option) any later version** (GPL-3.0-or-later). See [LICENSE](LICENSE).
 
 You may use, study, share and modify it. If you distribute it, modified or not, you must do so under the same license and make the source code available.
-Mixora comes with no warranty. Third-party components and their licenses: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Fadera comes with no warranty. Third-party components and their licenses: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

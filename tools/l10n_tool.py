@@ -1,4 +1,4 @@
-"""Strumenti per le lingue dell'interfaccia di Mixora.
+"""Strumenti per le lingue dell'interfaccia di Fadera.
 
   python -I tools/l10n_tool.py wrap       avvolge in tr() i testi dell'interfaccia (solo contesti sicuri)
   python -I tools/l10n_tool.py fixconst   toglie i `const` resi invalidi da tr() (usa `flutter analyze`)

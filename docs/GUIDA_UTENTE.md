@@ -1,15 +1,15 @@
-# Mixora: guida rapida
+# Fadera: guida rapida
 
 Controller professionale per mixer digitali. Versione 1.0.0.
 
-> Pensato per i mixer della famiglia Behringer X32 / Midas M32 (protocollo OSC); verificato solo su Behringer X32 Producer con firmware 4.15. Mixora è un progetto indipendente: non è affiliato, approvato o sostenuto da Behringer, Midas o Music Tribe. I nomi X32 e M32 e i rispettivi marchi appartengono ai loro proprietari.
+> Pensato per i mixer della famiglia Behringer X32 / Midas M32 (protocollo OSC); verificato solo su Behringer X32 Producer con firmware 4.15. Fadera è un progetto indipendente: non è affiliato, approvato o sostenuto da Behringer, Midas o Music Tribe. I nomi X32 e M32 e i rispettivi marchi appartengono ai loro proprietari.
 
 > Versione di sviluppo. Provata con il simulatore e con test automatici; **non ancora provata su un mixer reale**. Prima di usarla in uno spettacolo leggi "Limiti attuali".
 
 ## Avvio
 
-1. Estrai la cartella `Mixora-1.0.0-windows-x64` dove vuoi (non serve installazione).
-2. Avvia `Mixora.exe`.
+1. Estrai la cartella `Fadera-1.0.0-windows-x64` dove vuoi (non serve installazione).
+2. Avvia `Fadera.exe`.
 3. Clicca sull'indicatore in alto a sinistra ("Non connesso"): la finestra cerca i mixer su ogni rete del PC (cavo e Wi-Fi). Scegli il mixer oppure scrivi l'indirizzo (es. `192.168.1.2`) e premi **Connetti**.
    * **Via Wi-Fi** il PC deve essere sulla **stessa rete del mixer** (il Wi-Fi del router a cui è collegato il mixer). L'hotspot del telefono è un'altra rete e da lì il mixer non si trova. Internet non serve: se Windows segnala "Nessuna connessione Internet" va bene lo stesso.
    * Se non trova nulla, sotto "Nessun mixer ha risposto" la finestra spiega il motivo (per esempio "il PC è su un'altra rete").
@@ -21,7 +21,7 @@ L'indicatore diventa verde quando sei connesso e sincronizzato, arancione se con
 
 ## Provare senza mixer
 
-Avvia `simulatore\x32_sim.exe`, poi in Mixora connettiti a `127.0.0.1`. La fascia viola "SESSIONE SIMULATA" ricorda che non c'è un mixer reale.
+Avvia `simulatore\x32_sim.exe`, poi in Fadera connettiti a `127.0.0.1`. La fascia viola "SESSIONE SIMULATA" ricorda che non c'è un mixer reale.
 
 ## Uso
 
@@ -52,7 +52,7 @@ Le manopole e i fader **non** reagiscono alla rotella del mouse, per evitare mod
 
 ## Dati sul PC
 
-`%APPDATA%\Mixora`: `prefs.json` (preferenze), `backup\` (backup automatici prima delle operazioni distruttive), `logs\` (un file al giorno), `scene\` (file esportati).
+`%APPDATA%\Fadera`: `prefs.json` (preferenze), `backup\` (backup automatici prima delle operazioni distruttive), `logs\` (un file al giorno), `scene\` (file esportati).
 
 ## Limiti attuali
 

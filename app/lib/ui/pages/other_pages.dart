@@ -594,7 +594,7 @@ class _UserRouting extends StatelessWidget {
         padding: const EdgeInsets.all(Sp.s),
         decoration: BoxDecoration(color: AppColors.warn.withValues(alpha: 0.08), borderRadius: Rd.brM, border: Border.all(color: AppColors.warn.withValues(alpha: 0.4))),
         child: Text(tr('Sola lettura. I nomi delle sorgenti user vengono dal protocollo OSC non ufficiale e non sono ancora verificati sul mixer: '
-            'per questo da Mixora non si modificano.'), style: TextStyle(fontSize: 12, color: AppColors.warn)),
+            'per questo da Fadera non si modificano.'), style: TextStyle(fontSize: 12, color: AppColors.warn)),
       ),
       const SizedBox(height: Sp.s),
       grid(tr('User In 1–32'), tr('Sorgenti dei blocchi "User In" selezionabili negli ingressi dei canali'), '/config/userrout/in', 32, false),

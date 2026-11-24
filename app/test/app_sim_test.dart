@@ -75,7 +75,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 200));
     });
     expect(ctl.idx('/ch/01/config/icon'), 41);
-    // 3. invio da Mixora e rilettura del nodo: la conferma è la risposta del mixer
+    // 3. invio da Fadera e rilettura del nodo: la conferma è la risposta del mixer
     String? readBack;
     await t.runAsync(() async {
       final sub = ctl.client!.nodeLines.listen((l) {

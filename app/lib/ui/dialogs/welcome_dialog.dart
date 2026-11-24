@@ -103,18 +103,18 @@ class WelcomeDialog extends StatelessWidget {
         width: 520,
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(
-            tr('Mixora controlla dal PC i mixer digitali della famiglia X32/M32 tramite la rete (protocollo OSC). '
+            tr('Fadera controlla dal PC i mixer digitali della famiglia X32/M32 tramite la rete (protocollo OSC). '
             'Verificata su Behringer X32 Producer, firmware 4.15; gli altri modelli non sono ancora verificati.'),
             style: TextStyle(fontSize: 13, color: AppColors.text),
           ),
           const SizedBox(height: 14),
           step('1', tr('Stessa rete del mixer'), tr('Collega il PC con il cavo allo stesso router o switch del mixer, oppure al Wi-Fi di quel router. '
 'L\'hotspot del telefono è un\'altra rete: da lì il mixer non si trova.')),
-          step('2', tr('Internet non serve'), tr('Mixora comunica solo nella rete locale. Se Windows segnala "Nessuna connessione Internet", va bene lo stesso.')),
-          step('3', tr('Il primo collegamento non cambia nulla'), tr('Al collegamento Mixora legge lo stato del mixer e non invia modifiche. '
+          step('2', tr('Internet non serve'), tr('Fadera comunica solo nella rete locale. Se Windows segnala "Nessuna connessione Internet", va bene lo stesso.')),
+          step('3', tr('Il primo collegamento non cambia nulla'), tr('Al collegamento Fadera legge lo stato del mixer e non invia modifiche. '
 'Il mixer cambia solo quando muovi un controllo.')),
           const SizedBox(height: 4),
-          Text(tr('Mixora è un progetto indipendente, non affiliato a Behringer, Midas o Music Tribe.'),
+          Text(tr('Fadera è un progetto indipendente, non affiliato a Behringer, Midas o Music Tribe.'),
               style: TextStyle(fontSize: 11, color: AppColors.textFaint)),
         ]),
       ),

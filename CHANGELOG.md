@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Mixora are listed here. Dates are in YYYY-MM-DD format.
+All notable changes to Fadera are listed here. Dates are in YYYY-MM-DD format.
 
 ## Unreleased
 
@@ -16,7 +16,7 @@ First public release for Windows x64. Some advanced features are not yet verifie
 * Effects rack with graphical editors; routing overview (editing locked by default); scenes, snippets and cues.
 * Quick controls bar, keyboard shortcuts, colour themes, touch mode, profiles.
 * Discovery on every network adapter, manual IP address, clear explanations when the mixer is not found.
-* First-run welcome screen and built-in simulator to try Mixora without a mixer.
+* First-run welcome screen and built-in simulator to try Fadera without a mixer.
 * Interface in six languages: English, Italian, Spanish, French, German, Portuguese. "Automatic" follows the Windows language; the choice is in *Settings → General* and on the welcome screen, and applies immediately.
 * Diagnostics view with export; license page for the bundled components.
 * Windows installer (per-user by default, no administrator rights needed) and portable ZIP.

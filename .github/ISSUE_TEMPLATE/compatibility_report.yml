@@ -1,5 +1,5 @@
 name: Compatibility report
-description: Tell us how Mixora works with your mixer model and firmware
+description: Tell us how Fadera works with your mixer model and firmware
 labels: [compatibility]
 body:
   - type: input
@@ -12,7 +12,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Mixora version
+      label: Fadera version
     validations:
       required: true
   - type: checkboxes
@@ -22,8 +22,8 @@ body:
       options:
         - label: Discovery and connection
         - label: Sync (names, colours, faders match the console)
-        - label: Faders, mute, solo, pan from Mixora
-        - label: Channel EQ / gate / compressor from Mixora
+        - label: Faders, mute, solo, pan from Fadera
+        - label: Channel EQ / gate / compressor from Fadera
         - label: Meters and gain reduction
         - label: Effects, scenes or routing
   - type: textarea

@@ -1,4 +1,4 @@
-# Contributing to Mixora
+# Contributing to Fadera
 
 Thank you for your interest. Bug reports, compatibility reports and pull requests are welcome.
 
@@ -25,7 +25,7 @@ All tests run against the simulator on 127.0.0.1; they never send packets to a r
 
 ## License of contributions
 
-Mixora is licensed under GPL-3.0-or-later. By submitting a pull request you agree that your contribution is licensed under the same terms.
+Fadera is licensed under GPL-3.0-or-later. By submitting a pull request you agree that your contribution is licensed under the same terms.
 
 ## Pull requests
 

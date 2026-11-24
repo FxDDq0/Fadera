@@ -1,7 +1,7 @@
 // Fase B: scrittura di parametri SOLO sui canali 31 e 32, con rilettura indipendente.
 //
 // Per ogni percorso: lettura del valore attuale dal mixer (/node), scrittura tramite il motore
-// di Mixora (MixerState.setIdx/setString → X32Client), poi rilettura da una SECONDA connessione
+// di Fadera (MixerState.setIdx/setString → X32Client), poi rilettura da una SECONDA connessione
 // separata, così il valore riletto viene davvero dal mixer e non dallo stato locale.
 //
 // Uso: dart run tool/hw_write.dart <ip> <percorso=valore> [percorso=valore ...]

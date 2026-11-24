@@ -232,7 +232,7 @@ class AppController extends ChangeNotifier {
     final c = _client;
     final q = c?.queue;
     final b = StringBuffer()
-      ..writeln('# Diagnostica Mixora')
+      ..writeln('# Diagnostica Fadera')
       ..writeln('creato: ${DateTime.now().toIso8601String()}')
       ..writeln('versione: $appVersion')
       ..writeln('sistema: ${Platform.operatingSystem} ${Platform.operatingSystemVersion}')

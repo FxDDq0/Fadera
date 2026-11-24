@@ -35,7 +35,7 @@ Future<void> main(List<String> args) async {
   final snap = File('${out.path}/S_A2_sync_$ts.txt')..writeAsStringSync(state.snapshot());
   p('A2 istantanea: ${snap.path}');
 
-  // A3: nomi, icone e colori come li legge Mixora
+  // A3: nomi, icone e colori come li legge Fadera
   String two(int i) => i.toString().padLeft(2, '0');
   final strips = <(String, String)>[
     for (var i = 1; i <= 32; i++) ('Ch ${two(i)}', '/ch/${two(i)}'),
@@ -66,7 +66,7 @@ Future<void> main(List<String> args) async {
   p('A3 tabella: ${f3.path}');
 
   if (listen > 0) {
-    // A6/A7: modifiche fatte sulla console, ricevute da Mixora
+    // A6/A7: modifiche fatte sulla console, ricevute da Fadera
     p('ascolto delle modifiche dalla console per $listen s…');
     final sub = state.changes.listen((ch) {
       if (ch.origin == ChangeOrigin.remote) p('${DateTime.now().toIso8601String().substring(11, 23)}  ${ch.path} = ${ch.value}');

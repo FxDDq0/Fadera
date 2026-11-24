@@ -203,7 +203,7 @@ class _StatusLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (IconData icon, Color color, String text) = !online
-        ? (Icons.link_off, AppColors.textDim, tr('Non connesso: l\'icona si cambia solo con il mixer collegato. Mixora non salva icone solo sul PC.'))
+        ? (Icons.link_off, AppColors.textDim, tr('Non connesso: l\'icona si cambia solo con il mixer collegato. Fadera non salva icone solo sul PC.'))
         : switch (status) {
             _Status.idle => (Icons.info_outline, AppColors.textDim, tr('Scegli un\'icona e premi "Invia al mixer". L\'esito viene riletto dal mixer.')),
             _Status.sending => (Icons.sync, AppColors.warn, tr('Inviata. In attesa della rilettura dal mixer…')),

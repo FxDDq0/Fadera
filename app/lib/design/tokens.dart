@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Sistema grafico di Mixora: un solo punto in cui sono definiti colori, palette delle strip,
+/// Sistema grafico di Fadera: un solo punto in cui sono definiti colori, palette delle strip,
 /// tipografia, spaziature, raggi, ombre e dimensioni dei controlli.
 ///
 /// I widget non devono usare colori o misure scritti a mano: usano [AppColors], [Sp], [Rd],

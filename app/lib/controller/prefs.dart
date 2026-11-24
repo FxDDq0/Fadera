@@ -16,13 +16,17 @@ Directory appDataDir() {
   final d = Directory('$base${Platform.pathSeparator}${Brand.appDataFolder}');
   if (!d.existsSync()) {
     d.createSync(recursive: true);
-    // Prima esecuzione col nuovo nome: si copiano le preferenze della versione precedente (nome provvisorio).
-    final old = File('$base${Platform.pathSeparator}X32Remote${Platform.pathSeparator}prefs.json');
-    if (env['FLUTTER_TEST'] != 'true' && old.existsSync()) {
-      try {
-        old.copySync('${d.path}${Platform.pathSeparator}prefs.json');
-      } on Object {
-        // preferenze precedenti illeggibili: si riparte dai valori predefiniti
+    // Prima esecuzione col nuovo nome: si copiano le preferenze dei nomi precedenti
+    // (Mixora, poi X32Remote), così l'utente ritrova temi, layout e profili.
+    for (final previous in const ['Mixora', 'X32Remote']) {
+      final old = File('$base${Platform.pathSeparator}$previous${Platform.pathSeparator}prefs.json');
+      if (env['FLUTTER_TEST'] != 'true' && previous != Brand.appDataFolder && old.existsSync()) {
+        try {
+          old.copySync('${d.path}${Platform.pathSeparator}prefs.json');
+        } on Object {
+          // preferenze precedenti illeggibili: si riparte dai valori predefiniti
+        }
+        break;
       }
     }
   }

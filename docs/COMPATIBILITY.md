@@ -1,6 +1,6 @@
 # Compatibility
 
-Mixora talks to the mixer with the X32/M32 OSC remote protocol over UDP port 10023.
+Fadera talks to the mixer with the X32/M32 OSC remote protocol over UDP port 10023.
 Only results obtained on real hardware are marked as verified.
 
 ## Verified hardware

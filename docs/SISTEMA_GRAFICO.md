@@ -1,4 +1,4 @@
-# Sistema grafico di Mixora
+# Sistema grafico di Fadera
 
 Un solo punto per colori, misure e componenti: `app/lib/design/`.
 
