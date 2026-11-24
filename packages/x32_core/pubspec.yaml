@@ -1,0 +1,11 @@
+name: x32_core
+description: Motore indipendente dalla GUI per il controllo di mixer X32/M32 via OSC (protocollo, stato, sincronizzazione, meter).
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.5.0
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^5.0.0

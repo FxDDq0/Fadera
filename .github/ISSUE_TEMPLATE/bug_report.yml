@@ -1,0 +1,53 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting. Please do not include passwords or private data.
+        The diagnostics file contains your mixer's IP address and channel names: review it before attaching it.
+  - type: input
+    id: version
+    attributes:
+      label: Mixora version
+      description: Settings → Informazioni
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 23H2"
+    validations:
+      required: true
+  - type: input
+    id: mixer
+    attributes:
+      label: Mixer model and firmware
+      placeholder: "Behringer X32 Producer, firmware 4.15 (or: simulator)"
+    validations:
+      required: true
+  - type: dropdown
+    id: network
+    attributes:
+      label: Network connection
+      options: [Ethernet cable, Wi-Fi of the mixer's router, Direct cable PC–mixer, Other]
+  - type: textarea
+    id: steps
+    attributes:
+      label: What did you do?
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics (optional)
+      description: Attach the file exported from Settings → Diagnostica, after reviewing it.

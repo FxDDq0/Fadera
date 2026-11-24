@@ -1,0 +1,167 @@
+# Build, test and package Mixora for Windows x64.
+# * every push / pull request: tests, release build, portable ZIP, installer, SHA-256 (as workflow artifacts);
+# * a separate job installs the package on a fresh Windows runner (no Flutter) and uninstalls it;
+# * a tag "v*" (for example v1.0.0) also creates a DRAFT GitHub Release with the files attached,
+#   to be reviewed and published by hand.
+# No secrets are stored here: the release uses the automatic GITHUB_TOKEN.
+name: Build Windows
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: '3.50.1'
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Tool versions
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Version check (tag must match branding/brand.json)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $v = (Get-Content branding\brand.json -Raw | ConvertFrom-Json).version
+          if ("v$v" -ne "${{ github.ref_name }}") { throw "Tag ${{ github.ref_name }} does not match brand.json version $v" }
+
+      - name: Dependencies
+        shell: pwsh
+        run: |
+          Push-Location packages\x32_core; dart pub get; Pop-Location
+          Push-Location packages\x32_sim;  dart pub get; Pop-Location
+          Push-Location app;               flutter pub get; Pop-Location
+
+      - name: Tests (engine, simulator, app)
+        shell: pwsh
+        run: |
+          Push-Location packages\x32_core; dart test; if ($LASTEXITCODE) { exit 1 }; Pop-Location
+          Push-Location packages\x32_sim;  dart test; if ($LASTEXITCODE) { exit 1 }; Pop-Location
+          Push-Location app; flutter analyze --no-fatal-infos; if ($LASTEXITCODE) { exit 1 }; flutter test; if ($LASTEXITCODE) { exit 1 }; Pop-Location
+
+      - name: Release build
+        shell: pwsh
+        run: |
+          Push-Location app; flutter build windows --release; if ($LASTEXITCODE) { exit 1 }; Pop-Location
+          New-Item -ItemType Directory -Force build | Out-Null
+          Push-Location packages\x32_sim; dart compile exe bin\x32_sim.dart -o ..\..\build\x32_sim.exe; if ($LASTEXITCODE) { exit 1 }; Pop-Location
+
+      - name: Portable package
+        shell: pwsh
+        run: powershell -NoProfile -File tools\package.ps1
+
+      - name: Install Inno Setup (if missing)
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup --no-progress -y }
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found" }
+          "ISCC=$iscc" | Out-File -Append $env:GITHUB_ENV
+
+      - name: Installer
+        shell: pwsh
+        run: |
+          & $env:ISCC installer\Mixora.iss
+          if ($LASTEXITCODE) { exit 1 }
+          Get-ChildItem dist\*-setup.exe | ForEach-Object {
+            $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            Set-Content "$($_.FullName).sha256" "$h  $($_.Name)" -Encoding ascii
+          }
+          Get-Content dist\*.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mixora-windows-x64
+          path: |
+            dist/*.zip
+            dist/*-setup.exe
+            dist/*.sha256
+          if-no-files-found: error
+
+  install-test:
+    # Fresh Windows runner: nothing of the build environment, no Flutter setup.
+    needs: build
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: mixora-windows-x64
+          path: dist
+
+      - name: Verify SHA-256
+        shell: pwsh
+        run: |
+          Get-ChildItem dist\*.sha256 | ForEach-Object {
+            $expected, $file = (Get-Content $_.FullName).Split('  ')
+            $actual = (Get-FileHash (Join-Path dist $file) -Algorithm SHA256).Hash.ToLower()
+            if ($actual -ne $expected) { throw "Hash mismatch for $file" }
+            "OK $file"
+          }
+
+      - name: Install (current user, no administrator rights), check, reinstall, uninstall
+        shell: pwsh
+        run: |
+          $setup = (Get-ChildItem dist\*-setup.exe)[0].FullName
+          $dir = "$env:RUNNER_TEMP\MixoraTest"
+          $p = Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER',"/DIR=$dir" -Wait -PassThru
+          if ($p.ExitCode) { throw "install failed: $($p.ExitCode)" }
+          foreach ($f in 'Mixora.exe','flutter_windows.dll','vcruntime140.dll','data\app.so','data\flutter_assets\NOTICES.Z','simulatore\x32_sim.exe') {
+            if (-not (Test-Path (Join-Path $dir $f))) { throw "missing after install: $f" }
+          }
+          (Get-Item (Join-Path $dir 'Mixora.exe')).VersionInfo | Format-List ProductName, ProductVersion, FileVersion
+          # standalone simulator starts on 127.0.0.1 (pure Dart, no Flutter needed)
+          $sim = Start-Process (Join-Path $dir 'simulatore\x32_sim.exe') -ArgumentList '--port','10050' -PassThru
+          Start-Sleep 3; if ($sim.HasExited) { throw "simulator exited" }; Stop-Process $sim.Id -Force
+          # the application starts (informative: the runner desktop may not allow a GPU window)
+          $app = Start-Process (Join-Path $dir 'Mixora.exe') -PassThru
+          Start-Sleep 10; $app.Refresh()
+          "application running after 10 s: $(-not $app.HasExited)"
+          if (-not $app.HasExited) { Stop-Process $app.Id -Force }
+          $p = Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER',"/DIR=$dir" -Wait -PassThru
+          if ($p.ExitCode) { throw "reinstall failed: $($p.ExitCode)" }
+          $u = Start-Process (Join-Path $dir 'unins000.exe') -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
+          Start-Sleep 3
+          if (Test-Path (Join-Path $dir 'Mixora.exe')) { throw "files left after uninstall" }
+          "install / reinstall / uninstall OK"
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, install-test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mixora-windows-x64
+          path: dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          body_path: docs/release-notes/${{ github.ref_name }}.md
+          files: |
+            dist/*.zip
+            dist/*-setup.exe
+            dist/*.sha256

@@ -1,0 +1,35 @@
+# Build output
+build/
+dist/
+**/build/
+.dart_tool/
+**/.dart_tool/
+app/windows/flutter/ephemeral/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec_overrides.yaml
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Never commit: captures, logs, real show data, local preferences
+*.pcap
+*.pcapng
+*.log
+logs/
+prefs.json
+*.scn
+*.shw
+*.snp
+
+# Secrets
+*.pfx
+*.p12
+*.pem
+*.key
+.env
+
+# Written by packages/x32_core/test/fixture_analysis_test.dart while testing
+docs/analisi_fixture_2130.txt
