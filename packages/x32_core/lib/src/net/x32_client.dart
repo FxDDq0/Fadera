@@ -256,10 +256,12 @@ class X32Client {
 
     final jobs = <Future<void>>[];
     final transports = <Transport>[];
+    var boundIfaces = 0;
     for (final li in ifaces) {
       try {
         final t = await UdpTransport.bind(address: li.address, broadcast: true);
         transports.add(t);
+        boundIfaces++;
         final p = li.address.address.split('.');
         jobs.add(scan(t, [InternetAddress('255.255.255.255'), InternetAddress('${p[0]}.${p[1]}.${p[2]}.255'), ...hosts]));
       } on Object catch (e) {
@@ -274,15 +276,23 @@ class X32Client {
     } on Object catch (e) {
       errors.add('loopback: $e');
     }
-    if (transports.length == 1) {
-      // nessuna scheda di rete utilizzabile: tentativo con un socket generico, come prima
-      final t = await UdpTransport.bind(broadcast: true);
-      transports.add(t);
-      jobs.add(scan(t, [...await broadcastTargets(), ...hosts]));
-    }
-    await Future.wait(jobs);
-    for (final t in transports) {
-      await t.close();
+    try {
+      if (boundIfaces == 0) {
+        // nessuna scheda di rete utilizzabile: tentativo con un socket generico, come prima
+        try {
+          final t = await UdpTransport.bind(broadcast: true);
+          transports.add(t);
+          jobs.add(scan(t, [...await broadcastTargets(), ...hosts]));
+        } on Object catch (e) {
+          errors.add('socket generico: $e');
+        }
+      }
+      await Future.wait(jobs);
+    } finally {
+      // i socket si chiudono sempre, anche se una ricerca fallisce
+      for (final t in transports) {
+        await t.close();
+      }
     }
     return DiscoveryReport(found.values.toList(), ifaces, errors);
   }
@@ -416,9 +426,18 @@ class X32Client {
     _nodeWait?.completeError(ConnectException('disconnesso'));
     _setLink(LinkState.disconnected);
     _mixer = null;
+    // nessun comando può più partire da questo client (solo una nuova connect lo riapre)
+    _host = null;
   }
 
+  /// Vero dopo [dispose]: il client non è più utilizzabile.
+  bool get disposed => _disposed;
+  bool _disposed = false;
+
+  /// Rilascia socket, timer e stream. Si può chiamare più volte.
   Future<void> dispose() async {
+    if (_disposed) return;
+    _disposed = true;
     await disconnect();
     await _rx.cancel();
     await _tx.cancel();
@@ -485,19 +504,20 @@ class X32Client {
   }
 
   /// Operazioni sui dataset del mixer (doc 15 par. 6.4, comandi verificati nel binario).
-  void datasetLoad(String type, int idx) => _send(OscMessage('/load', [OscString(type), OscInt(idx), const OscInt(0), const OscInt(0)]));
-  void datasetSave(String type, int idx, String name, String notes) =>
+  /// Ogni comando restituisce falso se non è partito (mixer non connesso o non raggiungibile).
+  bool datasetLoad(String type, int idx) => _send(OscMessage('/load', [OscString(type), OscInt(idx), const OscInt(0), const OscInt(0)]));
+  bool datasetSave(String type, int idx, String name, String notes) =>
       _send(OscMessage('/save', [OscString(type), OscInt(idx), OscString(name), OscString(notes), const OscInt(0)]));
-  void datasetCopy(String type, int src, int dst) => _send(OscMessage('/copy', [OscString(type), OscInt(src), OscInt(dst), const OscInt(0)]));
-  void datasetDelete(String type, int idx) => _send(OscMessage('/delete', [OscString(type), OscInt(idx)]));
-  void datasetRename(String type, int idx, String name, String notes) =>
+  bool datasetCopy(String type, int src, int dst) => _send(OscMessage('/copy', [OscString(type), OscInt(src), OscInt(dst), const OscInt(0)]));
+  bool datasetDelete(String type, int idx) => _send(OscMessage('/delete', [OscString(type), OscInt(idx)]));
+  bool datasetRename(String type, int idx, String name, String notes) =>
       _send(OscMessage('/rename', [OscString(type), OscInt(idx), OscString(name), OscString(notes)]));
   /// Nuovo cue in posizione [pos] (`/add ,sis "cue" pos ""`, doc 15 par. 6.4).
-  void cueAdd(int pos) => _send(OscMessage('/add', [const OscString('cue'), OscInt(pos), const OscString('')]));
-  void requestShowDump() => _send(OscMessage('/showdump'));
+  bool cueAdd(int pos) => _send(OscMessage('/add', [const OscString('cue'), OscInt(pos), const OscString('')]));
+  bool requestShowDump() => _send(OscMessage('/showdump'));
 
   /// Richiede un singolo nodo (`/node ,s`); la risposta aggiorna lo stato come sync.
-  void requestNode(String path) => _send(OscMessage('/node', [OscString(path.startsWith('/') ? path.substring(1) : path)]));
+  bool requestNode(String path) => _send(OscMessage('/node', [OscString(path.startsWith('/') ? path.substring(1) : path)]));
 
   /// Invia righe di nodo (file di scena/snippet) come `/ ,s` (doc 15 par. 6.3).
   /// Risposta del mixer non verificata su hardware: il chiamante chiede conferma e salva un backup.

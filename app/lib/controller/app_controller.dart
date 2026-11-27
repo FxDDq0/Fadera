@@ -454,6 +454,21 @@ class AppController extends ChangeNotifier {
 
   /// Si connette; il risultato è vero solo con una risposta reale del mixer.
   Future<MixerInfo> connect(String host, {int port = kX32Port}) async {
+    // connessioni serializzate: un doppio clic o una riconnessione non lasciano client orfani
+    final previous = _connecting;
+    final mine = Completer<void>();
+    _connecting = mine.future;
+    try {
+      await previous;
+      return await _connectNow(host, port);
+    } finally {
+      mine.complete();
+    }
+  }
+
+  Future<void>? _connecting;
+
+  Future<MixerInfo> _connectNow(String host, int port) async {
     await disconnect();
     final addr = (await InternetAddress.lookup(host)).firstWhere((a) => a.type == InternetAddressType.IPv4);
     final t = await UdpTransport.bind();
@@ -497,10 +512,8 @@ class AppController extends ChangeNotifier {
     for (final s in [_linkSub, _meterSub, _logSub, _soloSub, _selSub, _nodeSub]) {
       await s?.cancel();
     }
-    if (c != null) {
-      await c.disconnect();
-      await c.transport.close();
-    }
+    // dispose chiude anche il trasporto e gli stream del client (prima restavano aperti a ogni riconnessione)
+    await c?.dispose();
     meters.clear();
     synced = false;
     notifyListeners();
@@ -607,13 +620,36 @@ class AppController extends ChangeNotifier {
 
   void log(String level, String msg) => _addLog(LogEntry(level, msg));
 
+  bool _disposed = false;
+
+  @override
+  void notifyListeners() {
+    // operazioni asincrone che finiscono dopo dispose non devono più notificare
+    if (!_disposed) super.notifyListeners();
+  }
+
   @override
   void dispose() {
+    if (_disposed) return;
     prefs.saveNow();
-    disconnect();
+    _disposed = true;
+    final c = _client;
+    _client = null;
+    for (final s in [_linkSub, _meterSub, _logSub, _soloSub, _selSub, _nodeSub]) {
+      s?.cancel();
+    }
     _undoSub.cancel();
     hub.dispose();
-    _logFile?.close();
+    soloTick.dispose();
+    panelTab.dispose();
+    panelRequest.dispose();
+    noticeTick.dispose();
+    final log = _logFile;
+    _logFile = null;
+    () async {
+      await c?.dispose();
+      await log?.close();
+    }();
     super.dispose();
   }
 }

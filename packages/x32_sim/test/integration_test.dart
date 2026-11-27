@@ -219,6 +219,19 @@ void main() {
     await c.dispose();
   });
 
+  test('dopo la disconnessione nessun comando parte; dispose ripetibile', () async {
+    final c = await newClient();
+    await c.connect(lo, port: sim.port);
+    await c.disconnect();
+    expect(c.datasetSave('snippet', 9, 'Dopo', ''), isFalse);
+    expect(c.requestNode('/ch/01/mix'), isFalse);
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    expect(sim.datasets['snippet']!.containsKey(9), isFalse);
+    await c.dispose();
+    await c.dispose();
+    expect(c.disposed, isTrue);
+  });
+
   test('pacchetti dall\'IP del mixer ma da un\'altra porta: ignorati', () async {
     final c = await newClient();
     await c.connect(lo, port: sim.port);
