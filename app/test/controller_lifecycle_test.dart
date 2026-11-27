@@ -41,6 +41,32 @@ void main() {
     ctl.dispose();
   });
 
+  test('tipo di effetto cambiato dal mixer: i parametri vengono riletti (tappa 2.6)', () async {
+    final ctl = AppController(prefs: Prefs()..persistent = false);
+    await ctl.connect('127.0.0.1', port: sim.port);
+    await ctl.syncFromMixer((_, _) {}, () => false);
+    final t = ctl.state.getIdx('/fx/1/type') ?? 0;
+    // i valori mostrati dall'interfaccia (un notificatore per parametro) prima del cambio
+    final par = ctl.state.node('/fx/1/par')!;
+    final shown = {for (var i = 0; i < par.fields.length; i++) par.leafPath(i): ctl.hub.listen(par.leafPath(i))};
+    // sul mixer il nuovo effetto ha valori diversi dai predefiniti
+    sim.surfaceSet('/fx/1/type', t == 0 ? 1 : 0); // cambio "dalla superficie"
+    final simPar = sim.state.node('/fx/1/par')!;
+    for (var i = 0; i < simPar.fields.length; i++) {
+      if (simPar.fields[i].kind != ParamKind.opaque && simPar.fields[i].kind != ParamKind.string) sim.state.setIdx(simPar.leafPath(i), 1, origin: ChangeOrigin.remote);
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    expect(ctl.state.getIdx('/fx/1/type'), sim.state.getIdx('/fx/1/type'));
+    // valori reali riletti dal mixer, non quelli predefiniti ricostruiti sul PC
+    expect(ctl.state.nodeLine('/fx/1/par'), sim.state.nodeLine('/fx/1/par'));
+    // e l'interfaccia mostra i valori nuovi
+    for (final e in shown.entries) {
+      if (ctl.state.specOf(e.key) != null) expect(e.value.value, ctl.state.getIdx(e.key), reason: e.key);
+    }
+    await ctl.disconnect();
+    ctl.dispose();
+  });
+
   test('dispose del controller mentre è connesso: nessun errore, nessuna notifica dopo', () async {
     final ctl = AppController(prefs: Prefs()..persistent = false);
     await ctl.connect('127.0.0.1', port: sim.port);

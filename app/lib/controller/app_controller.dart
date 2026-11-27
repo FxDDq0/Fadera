@@ -122,7 +122,10 @@ int pruneLogs(Directory d, {required DateTime now, Duration keep = const Duratio
 class AppController extends ChangeNotifier {
   AppController({Prefs? prefs}) : prefs = prefs ?? Prefs.load() {
     hub = ParamHub(state);
-    _undoSub = state.changes.listen(_recordUndo);
+    _undoSub = state.changes.listen((c) {
+      _recordUndo(c);
+      _watchFxType(c);
+    });
     _openLog();
     applyAppearance();
     L10n.apply(this.prefs.language);
@@ -139,6 +142,22 @@ class AppController extends ChangeNotifier {
           : tr('Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.', {'p0': this.prefs.loadBadFields.join(', ')}));
       if (copy != null) log('I', 'copia del file originale delle impostazioni: $copy');
     }
+  }
+
+  static final _fxTypePath = RegExp(r'^/fx/([1-8])/type$');
+  Timer? _fxRefresh;
+
+  /// Tipo di effetto cambiato dal mixer o da un altro client: i parametri del nuovo effetto
+  /// vengono riletti dal mixer (stessa richiesta `/node` del cambio locale) e l'interfaccia aggiornata.
+  void _watchFxType(ParamChange c) {
+    if (c.origin != ChangeOrigin.remote) return;
+    final m = _fxTypePath.firstMatch(c.path);
+    if (m == null) return;
+    _client?.requestNode('/fx/${m.group(1)}/par');
+    _fxRefresh?.cancel();
+    _fxRefresh = Timer(const Duration(milliseconds: 150), () {
+      if (!_disposed) hub.refreshAll();
+    });
   }
 
   /// Avvisi per l'utente, mostrati in basso dalla schermata principale (in ordine di arrivo).
@@ -698,6 +717,7 @@ class AppController extends ChangeNotifier {
       s?.cancel();
     }
     _undoSub.cancel();
+    _fxRefresh?.cancel();
     hub.dispose();
     soloTick.dispose();
     panelTab.dispose();
