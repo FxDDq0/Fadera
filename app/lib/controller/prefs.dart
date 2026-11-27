@@ -185,6 +185,8 @@ class Prefs {
     final String text;
     try {
       if (!f.existsSync()) return p;
+      // un file di preferenze sano pesa pochi KB: oltre 1 MB non viene nemmeno letto
+      if (f.lengthSync() > 1024 * 1024) throw const FileSystemException('file troppo grande');
       text = f.readAsStringSync();
     } on Object {
       p.loadUnreadable = true;
@@ -232,7 +234,7 @@ class Prefs {
     read('customPalette', (v) => p.customPalette = [for (final c in v as List) (c as num).toInt()]);
     read('stripColorOverride', (v) => p.stripColorOverride = {for (final e in (v as Map<String, dynamic>).entries) e.key: (e.value as num).toInt()});
     read('colorProfiles', (v) => p.colorProfiles = {for (final e in (v as Map<String, dynamic>).entries) e.key: e.value as Map<String, dynamic>});
-    read('touchMode', (v) => p.touchMode = v as String);
+    read('touchMode', (v) => p.touchMode = const ['auto', 'on', 'off'].contains(v) ? v as String : throw FormatException('touchMode: $v'));
     read('stripsPerPage', (v) => p.stripsPerPage = (v as num).toInt() == 16 ? 16 : 8);
     read('quickSlots', (v) {
       final n = (v as num).toInt();
@@ -257,6 +259,13 @@ class Prefs {
       final ts = DateTime.now().toIso8601String().substring(0, 19).replaceAll(':', '');
       final copy = File('${_file.path}.corrupt-$ts');
       copy.writeAsStringSync(text);
+      // al massimo tre copie: un file che resta guasto non riempie la cartella a ogni avvio
+      final name = '${_file.uri.pathSegments.last}.corrupt-';
+      final old = _file.parent.listSync().whereType<File>().where((f) => f.uri.pathSegments.last.startsWith(name)).toList()
+        ..sort((a, b) => b.path.compareTo(a.path));
+      for (final f in old.skip(3)) {
+        f.deleteSync();
+      }
       corruptCopyPath = copy.path;
     } on Object {
       corruptCopyPath = null;

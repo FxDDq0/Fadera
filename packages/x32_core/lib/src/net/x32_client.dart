@@ -30,11 +30,16 @@ const int kX32Port = 10023;
 /// Testo di `/xinfo` pronto da mostrare: senza caratteri di controllo e al massimo 64 caratteri
 /// (le risposte arrivano dalla rete e un dispositivo qualunque può fingersi un mixer).
 String cleanInfoText(String s) {
-  final t = s.replaceAll(RegExp(r'[\x00-\x1f\x7f]+'), ' ').replaceAll(RegExp(r' {2,}'), ' ').trim();
-  return t.length > 64 ? t.substring(0, 64) : t;
+  // controllo (Cc), formato invisibile (Cf: direzione del testo, larghezza zero) e separatori di riga
+  final t = s.replaceAll(RegExp(r'[\p{Cc}\p{Cf}  ]+', unicode: true), ' ').replaceAll(RegExp(r' {2,}'), ' ').trim();
+  final r = t.runes.toList();
+  return r.length > 64 ? String.fromCharCodes(r.take(64)) : t;
 }
 
 /// Identità di un mixer (risposta `/xinfo`, ordine dei campi verificato in T01b).
+/// Mixer mostrati al massimo nell'elenco della ricerca.
+const kMaxDiscoveredMixers = 32;
+
 class MixerInfo {
   const MixerInfo({required this.ip, required this.name, required this.model, required this.firmware, required this.address, this.port = kX32Port});
   final String ip;
@@ -200,6 +205,7 @@ class X32Client {
         for (final m in decodeOsc(d.data)) {
           if (m.address == '/xinfo' && m.args.length == 4 && m.args.every((a) => a is OscString)) {
             final a = m.args.cast<OscString>().map((s) => cleanInfoText(s.value)).toList();
+            if (found.length >= kMaxDiscoveredMixers) continue; // un dispositivo ostile non riempie l'elenco
             found.putIfAbsent('${d.address.address}:${d.port}',
                 () => MixerInfo(ip: a[0], name: a[1], model: a[2], firmware: a[3], address: d.address, port: d.port));
           }
@@ -326,7 +332,13 @@ class X32Client {
     if (info == null) {
       // Identità: /xinfo diretto (stesso formato della discovery).
       info = await _queryInfo(host, port) ??
-          MixerInfo(ip: status.length > 1 ? status[1] : host.address, name: status.length > 2 ? status[2] : '?', model: '?', firmware: '?', address: host, port: port);
+          MixerInfo(
+              ip: cleanInfoText(status.length > 1 ? status[1] : host.address),
+              name: cleanInfoText(status.length > 2 ? status[2] : '?'),
+              model: '?',
+              firmware: '?',
+              address: host,
+              port: port);
     }
     _mixer = info;
     _lastRx = DateTime.now();
@@ -522,6 +534,7 @@ class X32Client {
   /// Invia righe di nodo (file di scena/snippet) come `/ ,s` (doc 15 par. 6.3).
   /// Risposta del mixer non verificata su hardware: il chiamante chiede conferma e salva un backup.
   Future<int> sendNodeLines(Iterable<String> lines) async {
+    final droppedBefore = queue.dropped;
     var n = 0;
     for (final l in lines) {
       final t = l.trim();
@@ -530,7 +543,9 @@ class X32Client {
       if (++n % 32 == 0) await queue.drained(); // contropressione: nessuna coda che cresce
     }
     await queue.drained();
-    return n;
+    // le righe che la coda non è riuscita a codificare o inviare non contano come inviate
+    final lost = queue.dropped - droppedBefore;
+    return lost >= n ? 0 : n - lost;
   }
 
   /// Comando ordinato: mai fuso né scartato. Restituisce falso se non è stato accodato.

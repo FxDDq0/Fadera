@@ -50,6 +50,20 @@ void main() {
     expect(p.meterPeakHoldMs, lessThanOrEqualTo(10000));
   });
 
+  test('valore non ammesso per la modalità touch riportato al predefinito', () {
+    file.writeAsStringSync('{"touchMode": "forse"}');
+    expect(Prefs.load(file: file).touchMode, 'auto');
+  });
+
+  test('al massimo tre copie dei file guasti', () {
+    for (var i = 0; i < 5; i++) {
+      File('${file.path}.corrupt-2026-01-0${i + 1}T000000').writeAsStringSync('x');
+    }
+    file.writeAsStringSync('{ guasto');
+    Prefs.load(file: file);
+    expect(corruptCopies().length, 3);
+  });
+
   test('file valido: nessun errore e nessuna copia', () {
     final a = Prefs(file: file)..lastHost = '10.0.0.5';
     expect(a.saveNow(), isTrue);

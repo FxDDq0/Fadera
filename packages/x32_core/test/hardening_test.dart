@@ -72,5 +72,7 @@ void main() {
     expect(t.contains(RegExp(r'[\x00-\x1f\x7f]')), isFalse);
     expect(t.length, lessThanOrEqualTo(64));
     expect(t, startsWith('Mixer Finto'));
+    // direzione del testo invertita e caratteri a larghezza zero tolti
+    expect(cleanInfoText('X32‮esrever​'), 'X32 esrever');
   });
 }

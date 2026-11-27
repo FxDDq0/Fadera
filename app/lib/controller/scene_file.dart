@@ -49,6 +49,15 @@ class SceneFilePlan {
 final Set<String> _syncNodes = kSyncNodes.toSet();
 final _headamp = RegExp(r'^/headamp/\d{3}$');
 
+/// Vero per una riga di un nodo della tabella di sync che una scena può contenere
+/// (mai `/-…`: azioni, preferenze, stato). Vale sia per l'invio sia per il caricamento nell'app.
+bool isSceneNodeLine(String line, MixerState state) {
+  final l = line.trim();
+  if (!l.startsWith('/') || l.length > kMaxNodeLineLength) return false;
+  final path = splitNodeLine(l)?.$1;
+  return path != null && !path.startsWith('/-') && _syncNodes.contains(path) && state.node(path) != null;
+}
+
 /// Filtra le righe di un file di scena: si inviano solo i nodi noti della tabella di sync.
 /// Sono sempre esclusi i percorsi `/-…` (azioni, preferenze, stato), che una scena X32 non contiene.
 SceneFilePlan planSceneSend(Iterable<String> lines, MixerState state) {
@@ -59,11 +68,13 @@ SceneFilePlan planSceneSend(Iterable<String> lines, MixerState state) {
     final l = raw.trim();
     if (!l.startsWith('/')) continue;
     final path = splitNodeLine(l)?.$1;
-    if (path == null || path.startsWith('/-') || !_syncNodes.contains(path) || state.node(path) == null || l.length > kMaxNodeLineLength) {
+    // il protocollo del mixer trasporta solo testo ASCII: una riga con lettere accentate non partirebbe
+    final asciiOnly = l.codeUnits.every((c) => c < 128);
+    if (!isSceneNodeLine(l, state) || !asciiOnly) {
       rejected.add(l);
       continue;
     }
-    if (_headamp.hasMatch(path)) phantom++;
+    if (path != null && _headamp.hasMatch(path)) phantom++;
     sendable.add(l);
   }
   return SceneFilePlan(sendable, rejected, phantom);

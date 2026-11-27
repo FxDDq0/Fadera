@@ -25,6 +25,12 @@ void main() {
     expect(plan.phantomLines, 0);
   });
 
+  test('righe con lettere non ASCII scartate (non partirebbero e sparirebbero in silenzio)', () {
+    final plan = planSceneSend(['/ch/04/config "Chitarra è" 1 RD 4', '/ch/05/config "Basso" 1 RD 5'], state);
+    expect(plan.sendable, ['/ch/05/config "Basso" 1 RD 5']);
+    expect(plan.rejected, hasLength(1));
+  });
+
   test('righe dell\'alimentazione phantom contate a parte', () {
     final plan = planSceneSend(['/headamp/000 +10.0 ON', '/headamp/001 +0.0 OFF', '/ch/03/mix OFF -oo ON +0 OFF -oo'], state);
     expect(plan.sendable, hasLength(3));

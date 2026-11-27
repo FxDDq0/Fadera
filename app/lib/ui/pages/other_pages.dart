@@ -857,9 +857,12 @@ class _LocalFilesState extends State<_LocalFiles> {
         ctl.notify(tr('Backup non riuscito ({p0}): file non caricato.', {'p0': e}));
         return;
       }
+      // anche nel solo caricamento valgono le regole dell'invio: righe di nodi noti, mai `/-…`
+      // (altrimenti una sync PC → Mixer successiva le invierebbe)
       var skipped = 0;
       for (final l in lines) {
-        if (l.trim().startsWith('/') && !ctl.state.applyNodeLine(l, ChangeOrigin.load)) skipped++;
+        if (!l.trim().startsWith('/')) continue;
+        if (!isSceneNodeLine(l, ctl.state) || !ctl.state.applyNodeLine(l, ChangeOrigin.load)) skipped++;
       }
       ctl.hub.refreshAll();
       if (skipped > 0) ctl.notify(tr("File caricato nell'app: {p0} righe non riconosciute ignorate.", {'p0': skipped}));
