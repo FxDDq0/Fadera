@@ -76,6 +76,27 @@ class SyncResult {
   bool get ok => completed == total && !cancelled && error == null;
 }
 
+/// Limita i messaggi ripetuti nel registro: [take] restituisce null se il messaggio va saltato,
+/// altrimenti quanti ne sono stati saltati dall'ultimo scritto.
+class LogThrottle {
+  LogThrottle(this.interval);
+  final Duration interval;
+  DateTime? _last;
+  int _skipped = 0;
+
+  int? take(DateTime now) {
+    final last = _last;
+    if (last != null && now.difference(last) < interval) {
+      _skipped++;
+      return null;
+    }
+    _last = now;
+    final n = _skipped;
+    _skipped = 0;
+    return n;
+  }
+}
+
 class LogEntry {
   LogEntry(this.level, this.message) : time = DateTime.now();
   final DateTime time;
@@ -569,6 +590,8 @@ class X32Client {
 
   // ---------------------------------------------------------- ricezione
 
+  final _badDatagramLog = LogThrottle(const Duration(seconds: 1));
+
   void _onDatagram(UdpPacket d) {
     if (_host == null || d.address.address != _host!.address || d.port != _port) {
       // solo il mixer connesso, dalla sua porta OSC (la discovery usa un trasporto separato):
@@ -580,7 +603,9 @@ class X32Client {
       msgs = decodeOsc(d.data);
     } on OscFormatException catch (e) {
       droppedCount++;
-      _log('W', 'datagramma scartato: ${e.message}');
+      // un flusso di pacchetti non validi non deve riempire il registro (al massimo un messaggio al secondo)
+      final skipped = _badDatagramLog.take(DateTime.now());
+      if (skipped != null) _log('W', 'datagramma scartato: ${e.message}${skipped > 0 ? ' (altri $skipped non mostrati)' : ''}');
       return;
     }
     _lastRx = DateTime.now();

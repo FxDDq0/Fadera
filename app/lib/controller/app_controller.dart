@@ -100,6 +100,25 @@ class MeterHub {
   }
 }
 
+/// Elimina i registri `x32remote_AAAA-MM-GG.log` più vecchi di [keep]. Restituisce quanti ne ha tolti.
+int pruneLogs(Directory d, {required DateTime now, Duration keep = const Duration(days: 30)}) {
+  var removed = 0;
+  final re = RegExp(r'^x32remote_(\d{4}-\d{2}-\d{2})\.log$');
+  try {
+    for (final f in d.listSync().whereType<File>()) {
+      final m = re.firstMatch(f.uri.pathSegments.last);
+      final day = m == null ? null : DateTime.tryParse(m.group(1)!);
+      if (day != null && now.difference(day) > keep) {
+        f.deleteSync();
+        removed++;
+      }
+    }
+  } on FileSystemException {
+    // pulizia facoltativa: un file bloccato resta lì
+  }
+  return removed;
+}
+
 class AppController extends ChangeNotifier {
   AppController({Prefs? prefs}) : prefs = prefs ?? Prefs.load() {
     hub = ParamHub(state);
@@ -628,17 +647,34 @@ class AppController extends ChangeNotifier {
   void _openLog() {
     try {
       final d = appSubDir('logs');
+      pruneLogs(d, now: DateTime.now());
       final day = DateTime.now().toIso8601String().substring(0, 10);
-      _logFile = File('${d.path}${Platform.pathSeparator}x32remote_$day.log').openWrite(mode: FileMode.append);
+      final file = File('${d.path}${Platform.pathSeparator}x32remote_$day.log');
+      _logBytes = file.existsSync() ? file.lengthSync() : 0;
+      _logFile = file.openWrite(mode: FileMode.append);
     } on Object {
       _logFile = null;
     }
   }
 
+  /// Il file del giorno non supera questa dimensione: oltre si scrive un'ultima riga e ci si ferma.
+  static const maxLogFileBytes = 5 * 1024 * 1024;
+  int _logBytes = 0;
+
   void _addLog(LogEntry e) {
     logs.add(e);
     if (logs.length > 2000) logs.removeRange(0, 500);
-    _logFile?.writeln(e.toString());
+    final f = _logFile;
+    if (f == null) return;
+    final line = e.toString();
+    _logBytes += line.length + 2;
+    if (_logBytes > maxLogFileBytes) {
+      f.writeln('${DateTime.now().toIso8601String()} [W] registro del giorno oltre ${maxLogFileBytes ~/ (1024 * 1024)} MB: scrittura su disco sospesa (resta in Diagnostica)');
+      _logFile = null;
+      f.close();
+      return;
+    }
+    f.writeln(line);
   }
 
   void log(String level, String msg) => _addLog(LogEntry(level, msg));
