@@ -704,5 +704,8 @@
  "Backup non riuscito ({p0}): invio annullato, il mixer non è stato modificato.": "Falha no backup ({p0}): envio cancelado, a mesa não foi alterada.",
  "Invio completato: {p0} righe. Backup: {p1}": "Envio concluído: {p0} linhas. Backup: {p1}",
  "Invio interrotto dopo {p0} di {p1} righe: il mixer è stato modificato solo in parte. Backup: {p2}": "Envio interrompido após {p0} de {p1} linhas: a mesa foi alterada apenas em parte. Backup: {p2}",
- "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Falha no envio após {p0} de {p1} linhas: {p2}. A mesa pode ter sido alterada em parte. Backup: {p3}"
+ "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Falha no envio após {p0} de {p1} linhas: {p2}. A mesa pode ter sido alterada em parte. Backup: {p3}",
+ "Le impostazioni non sono state salvate: {p0}": "As configurações não foram salvas: {p0}",
+ "Il file delle impostazioni era illeggibile: sono stati usati i valori predefiniti.": "O arquivo de configurações estava ilegível: foram usados os valores padrão.",
+ "Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.": "Algumas configurações não eram válidas e voltaram ao valor padrão: {p0}."
 }

@@ -704,5 +704,8 @@
  "Backup non riuscito ({p0}): invio annullato, il mixer non è stato modificato.": "La copia de seguridad falló ({p0}): envío cancelado, el mezclador no se modificó.",
  "Invio completato: {p0} righe. Backup: {p1}": "Envío completado: {p0} líneas. Copia de seguridad: {p1}",
  "Invio interrotto dopo {p0} di {p1} righe: il mixer è stato modificato solo in parte. Backup: {p2}": "Envío interrumpido tras {p0} de {p1} líneas: el mezclador se modificó solo en parte. Copia de seguridad: {p2}",
- "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "El envío falló tras {p0} de {p1} líneas: {p2}. Es posible que el mezclador se haya modificado en parte. Copia de seguridad: {p3}"
+ "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "El envío falló tras {p0} de {p1} líneas: {p2}. Es posible que el mezclador se haya modificado en parte. Copia de seguridad: {p3}",
+ "Le impostazioni non sono state salvate: {p0}": "La configuración no se ha guardado: {p0}",
+ "Il file delle impostazioni era illeggibile: sono stati usati i valori predefiniti.": "No se pudo leer el archivo de configuración: se usaron los valores predeterminados.",
+ "Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.": "Algunos ajustes no eran válidos y volvieron a su valor predeterminado: {p0}."
 }

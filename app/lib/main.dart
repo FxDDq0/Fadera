@@ -1,3 +1,5 @@
+import 'dart:ui' show AppExitResponse;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -84,6 +86,43 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _clock = MeterClock();
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    // alla chiusura della finestra le preferenze in attesa vengono scritte subito
+    _lifecycle = AppLifecycleListener(onExitRequested: () async {
+      widget.ctl.prefs.saveNow();
+      return AppExitResponse.exit;
+    });
+    widget.ctl.noticeTick.addListener(_showNotices);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showNotices());
+  }
+
+  @override
+  void dispose() {
+    widget.ctl.noticeTick.removeListener(_showNotices);
+    _lifecycle.dispose();
+    _clock.dispose();
+    super.dispose();
+  }
+
+  void _showNotices() {
+    if (!mounted) return;
+    final m = ScaffoldMessenger.maybeOf(context);
+    if (m == null) return;
+    final ctl = widget.ctl;
+    while (ctl.pendingNotices.isNotEmpty) {
+      final text = ctl.pendingNotices.removeAt(0);
+      m.showSnackBar(SnackBar(
+        content: Text(text, key: const ValueKey('notice')),
+        duration: const Duration(seconds: 8),
+        showCloseIcon: true,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

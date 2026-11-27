@@ -107,6 +107,28 @@ class AppController extends ChangeNotifier {
     _openLog();
     applyAppearance();
     L10n.apply(this.prefs.language);
+    this.prefs.onSaveError = (m) {
+      log('E', m);
+      notify(tr('Le impostazioni non sono state salvate: {p0}', {'p0': this.prefs.saveError ?? m}));
+    };
+    final problem = this.prefs.loadError;
+    if (problem != null) {
+      log('W', problem);
+      final copy = this.prefs.corruptCopyPath;
+      notify(this.prefs.loadUnreadable
+          ? tr('Il file delle impostazioni era illeggibile: sono stati usati i valori predefiniti.')
+          : tr('Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.', {'p0': this.prefs.loadBadFields.join(', ')}));
+      if (copy != null) log('I', 'copia del file originale delle impostazioni: $copy');
+    }
+  }
+
+  /// Avvisi per l'utente, mostrati in basso dalla schermata principale (in ordine di arrivo).
+  final List<String> pendingNotices = [];
+  final ValueNotifier<int> noticeTick = ValueNotifier(0);
+
+  void notify(String message) {
+    pendingNotices.add(message);
+    noticeTick.value++;
   }
 
   /// Cambia la lingua dell'interfaccia ('system' = lingua di Windows) e la salva.
@@ -587,6 +609,7 @@ class AppController extends ChangeNotifier {
 
   @override
   void dispose() {
+    prefs.saveNow();
     disconnect();
     _undoSub.cancel();
     hub.dispose();

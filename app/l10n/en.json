@@ -704,5 +704,8 @@
  "Backup non riuscito ({p0}): invio annullato, il mixer non è stato modificato.": "Backup failed ({p0}): sending cancelled, the mixer was not changed.",
  "Invio completato: {p0} righe. Backup: {p1}": "Sending complete: {p0} lines. Backup: {p1}",
  "Invio interrotto dopo {p0} di {p1} righe: il mixer è stato modificato solo in parte. Backup: {p2}": "Sending stopped after {p0} of {p1} lines: the mixer was only partly changed. Backup: {p2}",
- "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Sending failed after {p0} of {p1} lines: {p2}. The mixer may have been partly changed. Backup: {p3}"
+ "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Sending failed after {p0} of {p1} lines: {p2}. The mixer may have been partly changed. Backup: {p3}",
+ "Le impostazioni non sono state salvate: {p0}": "Settings were not saved: {p0}",
+ "Il file delle impostazioni era illeggibile: sono stati usati i valori predefiniti.": "The settings file could not be read: default values were used.",
+ "Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.": "Some settings were not valid and were reset to their default value: {p0}."
 }

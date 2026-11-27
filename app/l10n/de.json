@@ -704,5 +704,8 @@
  "Backup non riuscito ({p0}): invio annullato, il mixer non è stato modificato.": "Sicherung fehlgeschlagen ({p0}): Senden abgebrochen, das Mischpult wurde nicht verändert.",
  "Invio completato: {p0} righe. Backup: {p1}": "Senden abgeschlossen: {p0} Zeilen. Sicherung: {p1}",
  "Invio interrotto dopo {p0} di {p1} righe: il mixer è stato modificato solo in parte. Backup: {p2}": "Senden nach {p0} von {p1} Zeilen abgebrochen: das Mischpult wurde nur teilweise verändert. Sicherung: {p2}",
- "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Senden nach {p0} von {p1} Zeilen fehlgeschlagen: {p2}. Das Mischpult wurde möglicherweise teilweise verändert. Sicherung: {p3}"
+ "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Senden nach {p0} von {p1} Zeilen fehlgeschlagen: {p2}. Das Mischpult wurde möglicherweise teilweise verändert. Sicherung: {p3}",
+ "Le impostazioni non sono state salvate: {p0}": "Die Einstellungen wurden nicht gespeichert: {p0}",
+ "Il file delle impostazioni era illeggibile: sono stati usati i valori predefiniti.": "Die Einstellungsdatei war nicht lesbar: es wurden die Standardwerte verwendet.",
+ "Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.": "Einige Einstellungen waren ungültig und wurden auf den Standardwert zurückgesetzt: {p0}."
 }

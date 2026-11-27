@@ -704,5 +704,8 @@
  "Backup non riuscito ({p0}): invio annullato, il mixer non è stato modificato.": "Échec de la sauvegarde ({p0}) : envoi annulé, la console n'a pas été modifiée.",
  "Invio completato: {p0} righe. Backup: {p1}": "Envoi terminé : {p0} lignes. Sauvegarde : {p1}",
  "Invio interrotto dopo {p0} di {p1} righe: il mixer è stato modificato solo in parte. Backup: {p2}": "Envoi interrompu après {p0} lignes sur {p1} : la console n'a été modifiée qu'en partie. Sauvegarde : {p2}",
- "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Échec de l'envoi après {p0} lignes sur {p1} : {p2}. La console a peut-être été modifiée en partie. Sauvegarde : {p3}"
+ "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Échec de l'envoi après {p0} lignes sur {p1} : {p2}. La console a peut-être été modifiée en partie. Sauvegarde : {p3}",
+ "Le impostazioni non sono state salvate: {p0}": "Les réglages n'ont pas été enregistrés : {p0}",
+ "Il file delle impostazioni era illeggibile: sono stati usati i valori predefiniti.": "Le fichier des réglages était illisible : les valeurs par défaut ont été utilisées.",
+ "Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.": "Certains réglages n'étaient pas valides et ont repris leur valeur par défaut : {p0}."
 }
