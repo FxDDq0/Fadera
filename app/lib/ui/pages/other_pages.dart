@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:x32_core/x32_core.dart';
 
 import '../../controller/app_controller.dart';
@@ -648,9 +649,10 @@ class _ScenesPageState extends State<ScenesPage> {
         content: SizedBox(
           width: 380,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            TextField(controller: n, maxLength: 32, autofocus: true, decoration: InputDecoration(labelText: tr('Nome'))),
+            // il mixer accetta solo testo ASCII: lettere accentate non arriverebbero (invio scartato)
+            TextField(controller: n, maxLength: 32, autofocus: true, inputFormatters: [_asciiOnly], decoration: InputDecoration(labelText: tr('Nome'), helperText: tr('Solo lettere senza accento, numeri e simboli comuni.'))),
             const SizedBox(height: Sp.s),
-            TextField(controller: d, maxLength: 64, decoration: InputDecoration(labelText: tr('Note'))),
+            TextField(controller: d, maxLength: 64, inputFormatters: [_asciiOnly], decoration: InputDecoration(labelText: tr('Note'))),
           ]),
         ),
         actions: [
@@ -663,6 +665,13 @@ class _ScenesPageState extends State<ScenesPage> {
 
   String _type = 'scene';
   String _filter = '';
+
+  static final _asciiOnly = FilteringTextInputFormatter.allow(RegExp(r'[ -~]'));
+
+  /// Avvisa se un comando verso il mixer non è partito (mixer non raggiungibile nel frattempo).
+  void _sent(bool ok) {
+    if (!ok) widget.ctl.notify(tr('Comando non inviato: il mixer non è raggiungibile.'));
+  }
 
   static final _labels = {'scene': (tr('Scene'), tr('la scena'), 100), 'snippet': ('Snippet', tr('lo snippet'), 100), 'cue': ('Cue', tr('il cue'), 500)};
 
@@ -707,7 +716,7 @@ class _ScenesPageState extends State<ScenesPage> {
                     ),
                   ),
                   const Spacer(),
-                  MxButton(label: tr('Aggiorna elenco'), icon: Icons.refresh, kind: MxButtonKind.ghost, onTap: online ? () => c.requestShowDump() : null),
+                  MxButton(label: tr('Aggiorna elenco'), icon: Icons.refresh, kind: MxButtonKind.ghost, onTap: online ? () => _sent(c.requestShowDump()) : null),
                   const SizedBox(width: Sp.s),
                   MxButton(
                     label: _type == 'cue' ? tr('Nuovo cue') : tr('Salva nuovo'),
@@ -719,11 +728,11 @@ class _ScenesPageState extends State<ScenesPage> {
                             final free = firstFree();
                             if (free < 0) return;
                             if (_type == 'cue') {
-                              c.cueAdd(free);
+                              _sent(c.cueAdd(free));
                               return;
                             }
                             final r = await _askName(tr('Salva lo stato corrente in posizione {p0}', {'p0': free}));
-                            if (r != null) c.datasetSave(_type, free, r.$1, r.$2);
+                            if (r != null) _sent(c.datasetSave(_type, free, r.$1, r.$2));
                           },
                   ),
                 ]),
@@ -767,8 +776,15 @@ class _ScenesPageState extends State<ScenesPage> {
                                       : () async {
                                           if (await _confirm(tr('Richiamare "{p0}"?', {'p0': e.value}), tr('Il mixer applicherà {p0} {p1}: i parametri attuali verranno modificati. Prima viene salvato un backup locale.', {'p0': noun, 'p1': e.key}),
                                               ok: tr('Richiama'))) {
-                                            ctl.backupLocalState('prima_di_richiamo_${_type}_${e.key}');
-                                            c.datasetLoad(_type, e.key);
+                                            try {
+                                              ctl.backupLocalState('prima_di_richiamo_${_type}_${e.key}');
+                                            } on Object catch (err) {
+                                              ctl.notify(tr('Backup non riuscito ({p0}): richiamo annullato.', {'p0': err}));
+                                              return;
+                                            }
+                                            final ok = c.datasetLoad(_type, e.key);
+                                            _sent(ok);
+                                            if (ok) ctl.afterRecall();
                                           }
                                         },
                                 ),
@@ -781,7 +797,7 @@ class _ScenesPageState extends State<ScenesPage> {
                                       ? null
                                       : () async {
                                           final r = await _askName(tr('Rinomina {p0}', {'p0': e.key}), name: e.value);
-                                          if (r != null) c.datasetRename(_type, e.key, r.$1, r.$2);
+                                          if (r != null) _sent(c.datasetRename(_type, e.key, r.$1, r.$2));
                                         },
                                 ),
                                 const SizedBox(width: Sp.xs),
@@ -793,7 +809,7 @@ class _ScenesPageState extends State<ScenesPage> {
                                       ? null
                                       : () {
                                           final free = firstFree();
-                                          if (free >= 0) c.datasetCopy(_type, e.key, free);
+                                          if (free >= 0) _sent(c.datasetCopy(_type, e.key, free));
                                         },
                                 ),
                                 const SizedBox(width: Sp.xs),
@@ -807,7 +823,7 @@ class _ScenesPageState extends State<ScenesPage> {
                                       : () async {
                                           if (await _confirm(tr('Eliminare "{p0}"?', {'p0': e.value}), tr('La posizione {p0} verrà cancellata dal mixer. L\'operazione non si può annullare.', {'p0': e.key}),
                                               ok: tr('Elimina'), danger: true)) {
-                                            c.datasetDelete(_type, e.key);
+                                            _sent(c.datasetDelete(_type, e.key));
                                           }
                                         },
                                 ),
@@ -865,6 +881,7 @@ class _LocalFilesState extends State<_LocalFiles> {
         if (!isSceneNodeLine(l, ctl.state) || !ctl.state.applyNodeLine(l, ChangeOrigin.load)) skipped++;
       }
       ctl.hub.refreshAll();
+      ctl.clearUndo();
       if (skipped > 0) ctl.notify(tr("File caricato nell'app: {p0} righe non riconosciute ignorate.", {'p0': skipped}));
       return;
     }
@@ -923,6 +940,7 @@ class _LocalFilesState extends State<_LocalFiles> {
       ctl.state.applyNodeLine(l, ChangeOrigin.load);
     }
     ctl.hub.refreshAll();
+    ctl.clearUndo();
     ctl.log(complete ? 'I' : 'W', 'file ${f.path}: $sent/${plan.sendable.length} righe inviate, ${plan.rejected.length} scartate');
     ctl.notify(complete
         ? tr('File inviato: {p0} righe.', {'p0': sent})

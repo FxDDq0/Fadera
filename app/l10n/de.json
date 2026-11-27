@@ -718,5 +718,9 @@
  "File inviato: {p0} righe.": "Datei gesendet: {p0} Zeilen.",
  "Invio incompleto: {p0} di {p1} righe. Il mixer è stato modificato solo in parte; il backup è nella cartella backup.": "Unvollständig gesendet: {p0} von {p1} Zeilen. Das Mischpult wurde nur teilweise verändert; die Sicherung liegt im Ordner backup.",
  "Esportazione non riuscita: {p0}": "Export fehlgeschlagen: {p0}",
- "Questa parte non può essere mostrata. Dettagli in ⚙ → Diagnostica.": "Dieser Teil kann nicht angezeigt werden. Details unter ⚙ → Diagnose."
+ "Questa parte non può essere mostrata. Dettagli in ⚙ → Diagnostica.": "Dieser Teil kann nicht angezeigt werden. Details unter ⚙ → Diagnose.",
+ "file di backup non valido": "ungültige Sicherungsdatei",
+ "Solo lettere senza accento, numeri e simboli comuni.": "Nur Buchstaben ohne Akzent, Ziffern und gängige Zeichen.",
+ "Comando non inviato: il mixer non è raggiungibile.": "Befehl nicht gesendet: das Mischpult ist nicht erreichbar.",
+ "Backup non riuscito ({p0}): richiamo annullato.": "Sicherung fehlgeschlagen ({p0}): Abruf abgebrochen."
 }

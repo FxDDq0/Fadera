@@ -718,5 +718,9 @@
  "File inviato: {p0} righe.": "Arquivo enviado: {p0} linhas.",
  "Invio incompleto: {p0} di {p1} righe. Il mixer è stato modificato solo in parte; il backup è nella cartella backup.": "Envio incompleto: {p0} de {p1} linhas. A mesa foi alterada apenas em parte; o backup está na pasta backup.",
  "Esportazione non riuscita: {p0}": "Falha na exportação: {p0}",
- "Questa parte non può essere mostrata. Dettagli in ⚙ → Diagnostica.": "Esta parte não pode ser mostrada. Detalhes em ⚙ → Diagnóstico."
+ "Questa parte non può essere mostrata. Dettagli in ⚙ → Diagnostica.": "Esta parte não pode ser mostrada. Detalhes em ⚙ → Diagnóstico.",
+ "file di backup non valido": "arquivo de backup inválido",
+ "Solo lettere senza accento, numeri e simboli comuni.": "Apenas letras sem acento, números e símbolos comuns.",
+ "Comando non inviato: il mixer non è raggiungibile.": "Comando não enviado: a mesa não está acessível.",
+ "Backup non riuscito ({p0}): richiamo annullato.": "Falha no backup ({p0}): chamada cancelada."
 }

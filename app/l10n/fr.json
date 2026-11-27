@@ -718,5 +718,9 @@
  "File inviato: {p0} righe.": "Fichier envoyé : {p0} lignes.",
  "Invio incompleto: {p0} di {p1} righe. Il mixer è stato modificato solo in parte; il backup è nella cartella backup.": "Envoi incomplet : {p0} lignes sur {p1}. La console n'a été modifiée qu'en partie ; la sauvegarde est dans le dossier backup.",
  "Esportazione non riuscita: {p0}": "Échec de l'exportation : {p0}",
- "Questa parte non può essere mostrata. Dettagli in ⚙ → Diagnostica.": "Cette partie ne peut pas être affichée. Détails dans ⚙ → Diagnostic."
+ "Questa parte non può essere mostrata. Dettagli in ⚙ → Diagnostica.": "Cette partie ne peut pas être affichée. Détails dans ⚙ → Diagnostic.",
+ "file di backup non valido": "fichier de sauvegarde non valide",
+ "Solo lettere senza accento, numeri e simboli comuni.": "Uniquement lettres sans accent, chiffres et symboles courants.",
+ "Comando non inviato: il mixer non è raggiungibile.": "Commande non envoyée : la console n'est pas joignable.",
+ "Backup non riuscito ({p0}): richiamo annullato.": "Échec de la sauvegarde ({p0}) : rappel annulé."
 }

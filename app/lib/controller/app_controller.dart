@@ -162,6 +162,17 @@ class AppController extends ChangeNotifier {
   bool _undoing = false;
   bool get canUndo => _undo.isNotEmpty;
 
+  /// Svuota la cronologia: dopo sync, richiami, ripristini e caricamenti i valori "precedenti"
+  /// non valgono più e Ctrl+Z li rimanderebbe al mixer.
+  void clearUndo() {
+    if (_undo.isEmpty) return;
+    _undo.clear();
+    notifyListeners();
+  }
+
+  /// Da chiamare dopo un richiamo di scena, snippet o cue partito verso il mixer.
+  void afterRecall() => clearUndo();
+
   void _recordUndo(ParamChange c) {
     if (c.origin != ChangeOrigin.local || _undoing || c.previous == null) return;
     final now = DateTime.now();
@@ -470,6 +481,7 @@ class AppController extends ChangeNotifier {
 
   Future<MixerInfo> _connectNow(String host, int port) async {
     await disconnect();
+    _undo.clear();
     final addr = (await InternetAddress.lookup(host)).firstWhere((a) => a.type == InternetAddressType.IPv4);
     final t = await UdpTransport.bind();
     final c = X32Client(transport: t, state: state)..autoReconnect = prefs.autoReconnect;
@@ -557,6 +569,7 @@ class AppController extends ChangeNotifier {
     final c = _client;
     if (c == null) return SyncResult(0, kSyncNodes.length, 0, Duration.zero, error: tr('mixer non connesso'));
     final r = await c.syncFromMixer(onProgress: progress, cancelled: cancelled);
+    _undo.clear();
     lastSync = r;
     lastSyncTime = DateTime.now();
     synced = r.ok;
@@ -593,11 +606,21 @@ class AppController extends ChangeNotifier {
   }
 
   /// Ripristina un backup nello stato locale (senza inviare nulla).
-  void restoreBackup(File f) {
-    final j = jsonDecode(f.readAsStringSync()) as Map<String, dynamic>;
-    state.restoreValues((j['values'] as Map<String, dynamic>).cast<String, Object?>(), ChangeOrigin.load);
+  /// Restituisce null se riuscito, altrimenti il motivo (il file viene controllato prima di toccare lo stato).
+  String? restoreBackup(File f) {
+    final Map<String, Object?> values;
+    try {
+      final j = jsonDecode(f.readAsStringSync()) as Map<String, dynamic>;
+      values = (j['values'] as Map<String, dynamic>).cast<String, Object?>();
+    } on Object catch (e) {
+      log('E', 'backup ${f.path} non valido: $e');
+      return tr('file di backup non valido');
+    }
+    state.restoreValues(values, ChangeOrigin.load);
+    _undo.clear();
     hub.refreshAll();
     notifyListeners();
+    return null;
   }
 
   // ------------------------------------------------------------- log
