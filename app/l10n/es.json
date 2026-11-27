@@ -707,5 +707,15 @@
  "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "El envío falló tras {p0} de {p1} líneas: {p2}. Es posible que el mezclador se haya modificado en parte. Copia de seguridad: {p3}",
  "Le impostazioni non sono state salvate: {p0}": "La configuración no se ha guardado: {p0}",
  "Il file delle impostazioni era illeggibile: sono stati usati i valori predefiniti.": "No se pudo leer el archivo de configuración: se usaron los valores predeterminados.",
- "Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.": "Algunos ajustes no eran válidos y volvieron a su valor predeterminado: {p0}."
+ "Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.": "Algunos ajustes no eran válidos y volvieron a su valor predeterminado: {p0}.",
+ "File non usato: {p0}": "Archivo no usado: {p0}",
+ "Backup non riuscito ({p0}): file non caricato.": "La copia de seguridad falló ({p0}): archivo no cargado.",
+ "File caricato nell'app: {p0} righe non riconosciute ignorate.": "Archivo cargado en la aplicación: {p0} líneas no reconocidas ignoradas.",
+ "Nel file non ci sono righe inviabili al mixer ({p0} scartate).": "El archivo no tiene líneas que se puedan enviar al mezclador ({p0} descartadas).",
+ "{p0} righe non verranno inviate (comandi, preferenze o percorsi sconosciuti).": "{p0} líneas no se enviarán (comandos, preferencias o rutas desconocidas).",
+ "ATTENZIONE: {p0} righe cambiano guadagno e alimentazione phantom (+48 V) degli ingressi.": "ATENCIÓN: {p0} líneas cambian la ganancia y la alimentación phantom (+48 V) de las entradas.",
+ "File non inviato: il mixer non è più raggiungibile.": "Archivo no enviado: el mezclador ya no está accesible.",
+ "File inviato: {p0} righe.": "Archivo enviado: {p0} líneas.",
+ "Invio incompleto: {p0} di {p1} righe. Il mixer è stato modificato solo in parte; il backup è nella cartella backup.": "Envío incompleto: {p0} de {p1} líneas. El mezclador se modificó solo en parte; la copia de seguridad está en la carpeta backup.",
+ "Esportazione non riuscita: {p0}": "La exportación falló: {p0}"
 }

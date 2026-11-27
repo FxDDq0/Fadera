@@ -707,5 +707,15 @@
  "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Échec de l'envoi après {p0} lignes sur {p1} : {p2}. La console a peut-être été modifiée en partie. Sauvegarde : {p3}",
  "Le impostazioni non sono state salvate: {p0}": "Les réglages n'ont pas été enregistrés : {p0}",
  "Il file delle impostazioni era illeggibile: sono stati usati i valori predefiniti.": "Le fichier des réglages était illisible : les valeurs par défaut ont été utilisées.",
- "Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.": "Certains réglages n'étaient pas valides et ont repris leur valeur par défaut : {p0}."
+ "Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.": "Certains réglages n'étaient pas valides et ont repris leur valeur par défaut : {p0}.",
+ "File non usato: {p0}": "Fichier non utilisé : {p0}",
+ "Backup non riuscito ({p0}): file non caricato.": "Échec de la sauvegarde ({p0}) : fichier non chargé.",
+ "File caricato nell'app: {p0} righe non riconosciute ignorate.": "Fichier chargé dans l'application : {p0} lignes non reconnues ignorées.",
+ "Nel file non ci sono righe inviabili al mixer ({p0} scartate).": "Le fichier ne contient aucune ligne envoyable à la console ({p0} écartées).",
+ "{p0} righe non verranno inviate (comandi, preferenze o percorsi sconosciuti).": "{p0} lignes ne seront pas envoyées (commandes, préférences ou chemins inconnus).",
+ "ATTENZIONE: {p0} righe cambiano guadagno e alimentazione phantom (+48 V) degli ingressi.": "ATTENTION : {p0} lignes modifient le gain et l'alimentation fantôme (+48 V) des entrées.",
+ "File non inviato: il mixer non è più raggiungibile.": "Fichier non envoyé : la console n'est plus joignable.",
+ "File inviato: {p0} righe.": "Fichier envoyé : {p0} lignes.",
+ "Invio incompleto: {p0} di {p1} righe. Il mixer è stato modificato solo in parte; il backup è nella cartella backup.": "Envoi incomplet : {p0} lignes sur {p1}. La console n'a été modifiée qu'en partie ; la sauvegarde est dans le dossier backup.",
+ "Esportazione non riuscita: {p0}": "Échec de l'exportation : {p0}"
 }

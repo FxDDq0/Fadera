@@ -707,5 +707,15 @@
  "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Falha no envio após {p0} de {p1} linhas: {p2}. A mesa pode ter sido alterada em parte. Backup: {p3}",
  "Le impostazioni non sono state salvate: {p0}": "As configurações não foram salvas: {p0}",
  "Il file delle impostazioni era illeggibile: sono stati usati i valori predefiniti.": "O arquivo de configurações estava ilegível: foram usados os valores padrão.",
- "Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.": "Algumas configurações não eram válidas e voltaram ao valor padrão: {p0}."
+ "Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.": "Algumas configurações não eram válidas e voltaram ao valor padrão: {p0}.",
+ "File non usato: {p0}": "Arquivo não usado: {p0}",
+ "Backup non riuscito ({p0}): file non caricato.": "Falha no backup ({p0}): arquivo não carregado.",
+ "File caricato nell'app: {p0} righe non riconosciute ignorate.": "Arquivo carregado no aplicativo: {p0} linhas não reconhecidas ignoradas.",
+ "Nel file non ci sono righe inviabili al mixer ({p0} scartate).": "O arquivo não tem linhas que possam ser enviadas à mesa ({p0} descartadas).",
+ "{p0} righe non verranno inviate (comandi, preferenze o percorsi sconosciuti).": "{p0} linhas não serão enviadas (comandos, preferências ou caminhos desconhecidos).",
+ "ATTENZIONE: {p0} righe cambiano guadagno e alimentazione phantom (+48 V) degli ingressi.": "ATENÇÃO: {p0} linhas alteram o ganho e a alimentação phantom (+48 V) das entradas.",
+ "File non inviato: il mixer non è più raggiungibile.": "Arquivo não enviado: a mesa não está mais acessível.",
+ "File inviato: {p0} righe.": "Arquivo enviado: {p0} linhas.",
+ "Invio incompleto: {p0} di {p1} righe. Il mixer è stato modificato solo in parte; il backup è nella cartella backup.": "Envio incompleto: {p0} de {p1} linhas. A mesa foi alterada apenas em parte; o backup está na pasta backup.",
+ "Esportazione non riuscita: {p0}": "Falha na exportação: {p0}"
 }

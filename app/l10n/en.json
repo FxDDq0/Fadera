@@ -707,5 +707,15 @@
  "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Sending failed after {p0} of {p1} lines: {p2}. The mixer may have been partly changed. Backup: {p3}",
  "Le impostazioni non sono state salvate: {p0}": "Settings were not saved: {p0}",
  "Il file delle impostazioni era illeggibile: sono stati usati i valori predefiniti.": "The settings file could not be read: default values were used.",
- "Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.": "Some settings were not valid and were reset to their default value: {p0}."
+ "Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.": "Some settings were not valid and were reset to their default value: {p0}.",
+ "File non usato: {p0}": "File not used: {p0}",
+ "Backup non riuscito ({p0}): file non caricato.": "Backup failed ({p0}): file not loaded.",
+ "File caricato nell'app: {p0} righe non riconosciute ignorate.": "File loaded into the app: {p0} unrecognised lines ignored.",
+ "Nel file non ci sono righe inviabili al mixer ({p0} scartate).": "The file has no lines that can be sent to the mixer ({p0} discarded).",
+ "{p0} righe non verranno inviate (comandi, preferenze o percorsi sconosciuti).": "{p0} lines will not be sent (commands, preferences or unknown paths).",
+ "ATTENZIONE: {p0} righe cambiano guadagno e alimentazione phantom (+48 V) degli ingressi.": "WARNING: {p0} lines change input gain and phantom power (+48 V).",
+ "File non inviato: il mixer non è più raggiungibile.": "File not sent: the mixer can no longer be reached.",
+ "File inviato: {p0} righe.": "File sent: {p0} lines.",
+ "Invio incompleto: {p0} di {p1} righe. Il mixer è stato modificato solo in parte; il backup è nella cartella backup.": "Incomplete send: {p0} of {p1} lines. The mixer was only partly changed; the backup is in the backup folder.",
+ "Esportazione non riuscita: {p0}": "Export failed: {p0}"
 }

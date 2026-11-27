@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:x32_core/x32_core.dart';
 
 import '../../controller/app_controller.dart';
+import '../../controller/scene_file.dart';
 import '../../brand.g.dart';
 import '../../controller/prefs.dart';
 import '../../theme.dart';
@@ -839,6 +840,92 @@ class _LocalFiles extends StatefulWidget {
 class _LocalFilesState extends State<_LocalFiles> {
   Directory get _dir => appSubDir('scene');
 
+  Future<void> _onFileAction(BuildContext context, File f, String action) async {
+    final ctl = widget.ctl;
+    final List<String> lines;
+    try {
+      lines = readSceneFile(f);
+    } on SceneFileException catch (e) {
+      ctl.log('E', 'file di scena ${f.path}: $e');
+      ctl.notify(tr('File non usato: {p0}', {'p0': e.message}));
+      return;
+    }
+    if (action == 'load') {
+      try {
+        ctl.backupLocalState('prima_di_import_locale');
+      } on Object catch (e) {
+        ctl.notify(tr('Backup non riuscito ({p0}): file non caricato.', {'p0': e}));
+        return;
+      }
+      var skipped = 0;
+      for (final l in lines) {
+        if (l.trim().startsWith('/') && !ctl.state.applyNodeLine(l, ChangeOrigin.load)) skipped++;
+      }
+      ctl.hub.refreshAll();
+      if (skipped > 0) ctl.notify(tr("File caricato nell'app: {p0} righe non riconosciute ignorate.", {'p0': skipped}));
+      return;
+    }
+    if (action != 'send' || !ctl.isOnline || !context.mounted) return;
+    var source = lines;
+    var partial = false;
+    if (ctl.prefs.experimentalRecallScope) {
+      // Funzione sperimentale: invio parziale solo con una conferma esplicita in più.
+      final scope = await showDialog<RecallScope>(context: context, builder: (_) => RecallScopeDialog(ctl: ctl));
+      if (scope == null || !context.mounted) return;
+      final all = [for (final l in lines) if (l.trim().startsWith('/')) l.trim()];
+      source = scope.filter(lines);
+      partial = source.length != all.length;
+      if (partial &&
+          !await widget.confirm(tr('Invio PARZIALE (funzione sperimentale)'),
+              tr('Verranno inviate solo {p0} righe su {p1}. Il mixer riceverà una configurazione parziale, '
+'con categorie ricostruite e non verificate su hardware. Continuare solo se sai esattamente cosa resta escluso.', {'p0': source.length, 'p1': all.length}),
+              ok: tr('Ho capito, continua'), danger: true)) {
+        return;
+      }
+    }
+    final plan = planSceneSend(source, ctl.state);
+    if (plan.sendable.isEmpty) {
+      ctl.notify(tr('Nel file non ci sono righe inviabili al mixer ({p0} scartate).', {'p0': plan.rejected.length}));
+      return;
+    }
+    final details = [
+      if (plan.rejected.isNotEmpty) tr('{p0} righe non verranno inviate (comandi, preferenze o percorsi sconosciuti).', {'p0': plan.rejected.length}),
+      if (plan.phantomLines > 0) tr('ATTENZIONE: {p0} righe cambiano guadagno e alimentazione phantom (+48 V) degli ingressi.', {'p0': plan.phantomLines}),
+    ];
+    if (!context.mounted) return;
+    final ok = await widget.confirm(
+        tr('Inviare il file al mixer?'),
+        tr('{p0} righe{p1} verranno applicate al mixer. '
+'Prima viene salvato un backup locale. La risposta del mixer a questo invio non è ancora verificata su hardware.', {'p0': plan.sendable.length, 'p1': partial ? tr(' (invio parziale)') : ''}) +
+            (details.isEmpty ? '' : '\n\n${details.join('\n')}'),
+        ok: tr('Invia'),
+        danger: true);
+    // le finestre di conferma lasciano tempo al collegamento di cadere
+    final client = ctl.client;
+    if (!ok || !context.mounted) return;
+    if (client == null || !ctl.isOnline) {
+      ctl.notify(tr('File non inviato: il mixer non è più raggiungibile.'));
+      return;
+    }
+    try {
+      ctl.backupLocalState('prima_di_invio_file');
+    } on Object catch (e) {
+      ctl.notify(tr('Backup non riuscito ({p0}): invio annullato, il mixer non è stato modificato.', {'p0': e}));
+      return;
+    }
+    final sent = await client.sendNodeLines(plan.sendable);
+    final complete = sent == plan.sendable.length && ctl.isOnline;
+    // lo stato locale segue solo ciò che è partito davvero
+    for (final l in plan.sendable.take(sent)) {
+      ctl.state.applyNodeLine(l, ChangeOrigin.load);
+    }
+    ctl.hub.refreshAll();
+    ctl.log(complete ? 'I' : 'W', 'file ${f.path}: $sent/${plan.sendable.length} righe inviate, ${plan.rejected.length} scartate');
+    ctl.notify(complete
+        ? tr('File inviato: {p0} righe.', {'p0': sent})
+        : tr('Invio incompleto: {p0} di {p1} righe. Il mixer è stato modificato solo in parte; il backup è nella cartella backup.', {'p0': sent, 'p1': plan.sendable.length}));
+  }
+
   @override
   Widget build(BuildContext context) {
     final ctl = widget.ctl;
@@ -856,8 +943,13 @@ class _LocalFilesState extends State<_LocalFiles> {
         FilledButton.icon(
           onPressed: () {
             final ts = DateTime.now().toIso8601String().substring(0, 19).replaceAll(':', '');
-            File('${_dir.path}${Platform.pathSeparator}scena_$ts.scn')
-                .writeAsStringSync('# ${Brand.name}: esportazione dello stato locale, ${DateTime.now()}\n${ctl.state.snapshot()}\n');
+            try {
+              File('${_dir.path}${Platform.pathSeparator}scena_$ts.scn')
+                  .writeAsStringSync('# ${Brand.name}: esportazione dello stato locale, ${DateTime.now()}\n${ctl.state.snapshot()}\n');
+            } on FileSystemException catch (e) {
+              ctl.log('E', 'esportazione dello stato non riuscita: $e');
+              ctl.notify(tr('Esportazione non riuscita: {p0}', {'p0': e.message}));
+            }
             setState(() {});
           },
           icon: const Icon(Icons.download, size: 16),
@@ -871,44 +963,7 @@ class _LocalFilesState extends State<_LocalFiles> {
                 dense: true,
                 title: Text(f.uri.pathSegments.last, style: const TextStyle(fontSize: 12)),
                 trailing: PopupMenuButton<String>(
-                  onSelected: (a) async {
-                    final lines = f.readAsLinesSync();
-                    if (a == 'load') {
-                      ctl.backupLocalState('prima_di_import_locale');
-                      for (final l in lines) {
-                        ctl.state.applyNodeLine(l, ChangeOrigin.load);
-                      }
-                      ctl.hub.refreshAll();
-                    } else if (a == 'send' && ctl.isOnline) {
-                      if (!context.mounted) return;
-                      final all = [for (final l in lines) if (l.trim().startsWith('/')) l.trim()];
-                      var send = all;
-                      var partial = false;
-                      if (ctl.prefs.experimentalRecallScope) {
-                        // Funzione sperimentale: invio parziale solo con una conferma esplicita in più.
-                        final scope = await showDialog<RecallScope>(context: context, builder: (_) => RecallScopeDialog(ctl: ctl));
-                        if (scope == null) return;
-                        send = scope.filter(lines);
-                        partial = send.length != all.length;
-                        if (partial &&
-                            !await widget.confirm(tr('Invio PARZIALE (funzione sperimentale)'),
-                                tr('Verranno inviate solo {p0} righe su {p1}. Il mixer riceverà una configurazione parziale, '
-'con categorie ricostruite e non verificate su hardware. Continuare solo se sai esattamente cosa resta escluso.', {'p0': send.length, 'p1': all.length}),
-                                ok: tr('Ho capito, continua'), danger: true)) {
-                          return;
-                        }
-                      }
-                      if (await widget.confirm(tr('Inviare il file al mixer?'), tr('{p0} righe{p1} verranno applicate al mixer. '
-'Prima viene salvato un backup locale. La risposta del mixer a questo invio non è ancora verificata su hardware.', {'p0': send.length, 'p1': partial ? tr(' (invio parziale)') : ''}), ok: tr('Invia'), danger: true)) {
-                        ctl.backupLocalState('prima_di_invio_file');
-                        for (final l in send) {
-                          ctl.state.applyNodeLine(l, ChangeOrigin.load);
-                        }
-                        await ctl.client!.sendNodeLines(send);
-                        ctl.hub.refreshAll();
-                      }
-                    }
-                  },
+                  onSelected: (a) => _onFileAction(context, f, a),
                   itemBuilder: (_) => [
                     PopupMenuItem(value: 'load', child: Text(tr('Carica solo nell\'app'))),
                     PopupMenuItem(value: 'send', enabled: ctl.isOnline, child: Text(tr('Invia al mixer…'))),

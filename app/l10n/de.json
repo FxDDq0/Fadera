@@ -707,5 +707,15 @@
  "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Senden nach {p0} von {p1} Zeilen fehlgeschlagen: {p2}. Das Mischpult wurde möglicherweise teilweise verändert. Sicherung: {p3}",
  "Le impostazioni non sono state salvate: {p0}": "Die Einstellungen wurden nicht gespeichert: {p0}",
  "Il file delle impostazioni era illeggibile: sono stati usati i valori predefiniti.": "Die Einstellungsdatei war nicht lesbar: es wurden die Standardwerte verwendet.",
- "Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.": "Einige Einstellungen waren ungültig und wurden auf den Standardwert zurückgesetzt: {p0}."
+ "Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.": "Einige Einstellungen waren ungültig und wurden auf den Standardwert zurückgesetzt: {p0}.",
+ "File non usato: {p0}": "Datei nicht verwendet: {p0}",
+ "Backup non riuscito ({p0}): file non caricato.": "Sicherung fehlgeschlagen ({p0}): Datei nicht geladen.",
+ "File caricato nell'app: {p0} righe non riconosciute ignorate.": "Datei in die App geladen: {p0} unbekannte Zeilen ignoriert.",
+ "Nel file non ci sono righe inviabili al mixer ({p0} scartate).": "Die Datei enthält keine Zeilen, die an das Mischpult gesendet werden können ({p0} verworfen).",
+ "{p0} righe non verranno inviate (comandi, preferenze o percorsi sconosciuti).": "{p0} Zeilen werden nicht gesendet (Befehle, Einstellungen oder unbekannte Pfade).",
+ "ATTENZIONE: {p0} righe cambiano guadagno e alimentazione phantom (+48 V) degli ingressi.": "ACHTUNG: {p0} Zeilen ändern Eingangsverstärkung und Phantomspeisung (+48 V).",
+ "File non inviato: il mixer non è più raggiungibile.": "Datei nicht gesendet: das Mischpult ist nicht mehr erreichbar.",
+ "File inviato: {p0} righe.": "Datei gesendet: {p0} Zeilen.",
+ "Invio incompleto: {p0} di {p1} righe. Il mixer è stato modificato solo in parte; il backup è nella cartella backup.": "Unvollständig gesendet: {p0} von {p1} Zeilen. Das Mischpult wurde nur teilweise verändert; die Sicherung liegt im Ordner backup.",
+ "Esportazione non riuscita: {p0}": "Export fehlgeschlagen: {p0}"
 }
