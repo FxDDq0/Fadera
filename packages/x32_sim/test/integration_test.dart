@@ -219,6 +219,35 @@ void main() {
     await c.dispose();
   });
 
+  test('sync PC → Mixer interrotta dalla perdita del collegamento: esito con errore, nessuna eccezione', () async {
+    final c = await newClient();
+    await c.connect(lo, port: sim.port);
+    var dropped = false;
+    final r = await c.syncToMixer(cancelled: () {
+      // a metà invio il collegamento cade (come un cavo staccato)
+      if (!dropped && c.queue.length == 0) {
+        dropped = true;
+        unawaited(c.disconnect());
+      }
+      return false;
+    });
+    expect(r.ok, isFalse);
+    expect(r.cancelled, isFalse);
+    expect(r.error, isNotNull);
+    expect(r.completed, lessThan(r.total));
+    await c.dispose();
+  });
+
+  test('sync senza collegamento: esito con errore invece di un\'eccezione', () async {
+    final c = await newClient();
+    final to = await c.syncToMixer();
+    final from = await c.syncFromMixer();
+    expect(to.ok || from.ok, isFalse);
+    expect(to.error, isNotNull);
+    expect(from.error, isNotNull);
+    await c.dispose();
+  });
+
   test('snippet e cue: save, add, copy, delete; elenco tramite righe /-show/showfile', () async {
     final c = await newClient();
     await c.connect(lo, port: sim.port);

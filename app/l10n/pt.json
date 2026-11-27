@@ -331,7 +331,6 @@
  "Inviare lo stato del PC al mixer?": "Enviar o estado do PC ao mixer?",
  "Tutti i parametri del mixer {p0} ({p1}) verranno sostituiti con quelli presenti in questa applicazione: {p2} nodi (canali, bus, effetti, routing, uscite).\n\nPrima dell'invio viene salvato un backup dello stato locale.\n\nAttenzione: la risposta del mixer a questo tipo di invio non è ancora stata verificata su hardware reale.": "Todos os parâmetros do mixer {p0} ({p1}) serão substituídos pelos deste aplicativo: {p2} nós (canais, buses, efeitos, routing, saídas).\n\nAntes do envio é salvo um backup do estado local.\n\nAtenção: a resposta do mixer a este tipo de envio ainda não foi verificada em hardware real.",
  "Sostituisci i parametri del mixer": "Substituir os parâmetros do mixer",
- "{p0} righe inviate. Backup: {p1}": "{p0} linhas enviadas. Backup: {p1}",
  "Connesso a {p0}": "Conectado a {p0}",
  "Sessione con il SIMULATORE locale: nessun mixer reale è coinvolto.": "Sessão com o SIMULADOR local: nenhum mixer real está envolvido.",
  "{p0} · firmware {p1} · {p2}": "{p0} · firmware {p1} · {p2}",
@@ -700,5 +699,10 @@
  "Blocca": "Bloquear",
  "Sblocca": "Desbloquear",
  "Invia": "Enviar",
- "es. 192.168.1.2": "ex.: 192.168.1.2"
+ "es. 192.168.1.2": "ex.: 192.168.1.2",
+ "mixer non connesso": "mesa não conectada",
+ "Backup non riuscito ({p0}): invio annullato, il mixer non è stato modificato.": "Falha no backup ({p0}): envio cancelado, a mesa não foi alterada.",
+ "Invio completato: {p0} righe. Backup: {p1}": "Envio concluído: {p0} linhas. Backup: {p1}",
+ "Invio interrotto dopo {p0} di {p1} righe: il mixer è stato modificato solo in parte. Backup: {p2}": "Envio interrompido após {p0} de {p1} linhas: a mesa foi alterada apenas em parte. Backup: {p2}",
+ "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Falha no envio após {p0} de {p1} linhas: {p2}. A mesa pode ter sido alterada em parte. Backup: {p3}"
 }

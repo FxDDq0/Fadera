@@ -519,7 +519,9 @@ class AppController extends ChangeNotifier {
   // ------------------------------------------------------------ sync
 
   Future<SyncResult> syncFromMixer(void Function(int, int) progress, bool Function() cancelled) async {
-    final r = await _client!.syncFromMixer(onProgress: progress, cancelled: cancelled);
+    final c = _client;
+    if (c == null) return SyncResult(0, kSyncNodes.length, 0, Duration.zero, error: tr('mixer non connesso'));
+    final r = await c.syncFromMixer(onProgress: progress, cancelled: cancelled);
     lastSync = r;
     lastSyncTime = DateTime.now();
     synced = r.ok;
@@ -546,7 +548,11 @@ class AppController extends ChangeNotifier {
   }
 
   Future<SyncResult> syncToMixer(void Function(int, int) progress, bool Function() cancelled) async {
-    final r = await _client!.syncToMixer(onProgress: progress, cancelled: cancelled);
+    final c = _client;
+    if (c == null) return SyncResult(0, kSyncNodes.length, 0, Duration.zero, error: tr('mixer non connesso'));
+    final r = await c.syncToMixer(onProgress: progress, cancelled: cancelled);
+    // dopo un invio parziale lo stato del mixer non coincide più con quello del PC
+    synced = r.ok;
     notifyListeners();
     return r;
   }

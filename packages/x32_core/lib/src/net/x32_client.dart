@@ -636,7 +636,7 @@ class X32Client {
   /// Sync Mixer → PC: richiede i 2127 nodi uno alla volta (stop-and-wait) e li applica
   /// come aggiornamenti di sync (mai reinviati). Ritrasmette ogni [replyTimeout].
   Future<SyncResult> syncFromMixer({void Function(int done, int total)? onProgress, bool Function()? cancelled, bool showDump = true}) async {
-    if (!_isOnline) throw StateError('non connesso');
+    if (!_isOnline) return SyncResult(0, kSyncNodes.length, 0, Duration.zero, error: 'mixer non connesso');
     final sw = Stopwatch()..start();
     _setLink(LinkState.syncing);
     var retrans = 0;
@@ -689,27 +689,48 @@ class X32Client {
   /// coda ordinata con contropressione ogni [pacingEvery] righe, senza attendere conferme. Il chiamante
   /// deve aver ottenuto la conferma esplicita dell'utente e salvato un backup.
   Future<SyncResult> syncToMixer({void Function(int done, int total)? onProgress, bool Function()? cancelled, int pacingEvery = 32}) async {
-    if (!_isOnline) throw StateError('non connesso');
+    if (!_isOnline) return SyncResult(0, kSyncNodes.length, 0, Duration.zero, error: 'mixer non connesso');
     final sw = Stopwatch()..start();
     _setLink(LinkState.syncing);
+    final droppedBefore = queue.dropped;
     var done = 0;
+    var cancelledByUser = false;
+    String? error;
     try {
       for (final path in kSyncNodes) {
-        if (cancelled?.call() ?? false) return SyncResult(done, kSyncNodes.length, 0, sw.elapsed, cancelled: true);
+        if (cancelled?.call() ?? false) {
+          cancelledByUser = true;
+          break;
+        }
+        if (!_isOnline) {
+          error = 'connessione interrotta durante l\'invio';
+          break;
+        }
         final n = state.node(path);
         final line = n?.toLine();
         if (line != null && (!n!.spec.opaque || n.rawText != null) && line.length > path.length) {
-          if (!_send(OscMessage('/', [OscString(line.substring(1))]))) throw ConnectException('coda dei comandi piena');
+          if (!_send(OscMessage('/', [OscString(line.substring(1))]))) {
+            error = _isOnline ? 'coda dei comandi piena' : 'connessione interrotta durante l\'invio';
+            break;
+          }
         }
         done++;
         if (done % pacingEvery == 0) await queue.drained();
         onProgress?.call(done, kSyncNodes.length);
       }
+      // l'invio è finito solo quando la coda si è svuotata: i comandi scartati vanno dichiarati
+      if (_isOnline) await queue.drained();
+      // la coda svuotata da una perdita o da una disconnessione non conta come "inviato"
+      if (error == null && !cancelledByUser && !_isOnline) error = 'connessione interrotta durante l\'invio';
+      final lost = queue.dropped - droppedBefore;
+      if (error == null && lost > 0) error = '$lost comandi scartati dalla coda di invio';
     } finally {
       if (_link == LinkState.syncing) _setLink(LinkState.connected);
     }
-    _log('I', 'sync PC → Mixer: $done righe inviate in ${sw.elapsedMilliseconds} ms (risposta del mixer non verificata)');
-    return SyncResult(done, kSyncNodes.length, 0, sw.elapsed);
+    final r = SyncResult(done, kSyncNodes.length, 0, sw.elapsed, cancelled: cancelledByUser, error: error);
+    _log(r.ok ? 'I' : 'W',
+        'sync PC → Mixer: $done/${kSyncNodes.length} righe in ${sw.elapsedMilliseconds} ms${cancelledByUser ? ', interrotta' : ''}${error != null ? ', errore: $error' : ''} (risposta del mixer non verificata)');
+    return r;
   }
 
   // ------------------------------------------------------------- utilità

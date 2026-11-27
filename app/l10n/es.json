@@ -331,7 +331,6 @@
  "Inviare lo stato del PC al mixer?": "¿Enviar el estado del PC al mezclador?",
  "Tutti i parametri del mixer {p0} ({p1}) verranno sostituiti con quelli presenti in questa applicazione: {p2} nodi (canali, bus, effetti, routing, uscite).\n\nPrima dell'invio viene salvato un backup dello stato locale.\n\nAttenzione: la risposta del mixer a questo tipo di invio non è ancora stata verificata su hardware reale.": "Todos los parámetros del mezclador {p0} ({p1}) se sustituirán por los de esta aplicación: {p2} nodos (canales, buses, efectos, routing, salidas).\n\nAntes del envío se guarda una copia de seguridad del estado local.\n\nAtención: la respuesta del mezclador a este tipo de envío aún no se ha verificado en hardware real.",
  "Sostituisci i parametri del mixer": "Sustituir los parámetros del mezclador",
- "{p0} righe inviate. Backup: {p1}": "{p0} líneas enviadas. Copia de seguridad: {p1}",
  "Connesso a {p0}": "Conectado a {p0}",
  "Sessione con il SIMULATORE locale: nessun mixer reale è coinvolto.": "Sesión con el SIMULADOR local: no interviene ningún mezclador real.",
  "{p0} · firmware {p1} · {p2}": "{p0} · firmware {p1} · {p2}",
@@ -700,5 +699,10 @@
  "Blocca": "Bloquear",
  "Sblocca": "Desbloquear",
  "Invia": "Enviar",
- "es. 192.168.1.2": "p. ej. 192.168.1.2"
+ "es. 192.168.1.2": "p. ej. 192.168.1.2",
+ "mixer non connesso": "mezclador no conectado",
+ "Backup non riuscito ({p0}): invio annullato, il mixer non è stato modificato.": "La copia de seguridad falló ({p0}): envío cancelado, el mezclador no se modificó.",
+ "Invio completato: {p0} righe. Backup: {p1}": "Envío completado: {p0} líneas. Copia de seguridad: {p1}",
+ "Invio interrotto dopo {p0} di {p1} righe: il mixer è stato modificato solo in parte. Backup: {p2}": "Envío interrumpido tras {p0} de {p1} líneas: el mezclador se modificó solo en parte. Copia de seguridad: {p2}",
+ "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "El envío falló tras {p0} de {p1} líneas: {p2}. Es posible que el mezclador se haya modificado en parte. Copia de seguridad: {p3}"
 }

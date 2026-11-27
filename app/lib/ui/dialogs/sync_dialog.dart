@@ -21,30 +21,37 @@ class _SyncDialogState extends State<SyncDialog> {
   bool _cancel = false;
   String? _result;
 
+  void _progress(int d, int t) {
+    if (mounted && (d % 25 == 0 || d == t)) {
+      setState(() {
+        _done = d;
+        _total = t;
+      });
+    }
+  }
+
   Future<void> _fromMixer() async {
     setState(() {
       _running = true;
       _cancel = false;
       _result = null;
     });
-    final r = await widget.ctl.syncFromMixer((d, t) {
-      if (mounted && (d % 25 == 0 || d == t)) {
-        setState(() {
-          _done = d;
-          _total = t;
-        });
-      }
-    }, () => _cancel);
-    if (!mounted) return;
-    setState(() {
-      _running = false;
+    SyncResult? r;
+    try {
+      r = await widget.ctl.syncFromMixer(_progress, () => _cancel);
       _result = r.ok
           ? tr('Sincronizzazione completata: {p0} nodi in {p1} s.', {'p0': r.completed, 'p1': (r.elapsed.inMilliseconds / 1000).toStringAsFixed(1)})
           : r.cancelled
               ? tr('Interrotta dopo {p0} nodi: lo stato locale è parziale.', {'p0': r.completed})
               : tr('Errore: {p0}', {'p0': r.error});
-    });
-    if (r.ok) Navigator.pop(context);
+    } on Object catch (e) {
+      widget.ctl.log('E', 'sync Mixer → PC: $e');
+      _result = tr('Errore: {p0}', {'p0': e});
+    } finally {
+      // qualunque cosa succeda la finestra torna utilizzabile (mai bloccata su "Interrompi")
+      if (mounted) setState(() => _running = false);
+    }
+    if (mounted && (r?.ok ?? false)) Navigator.pop(context);
   }
 
   Future<void> _toMixer() async {
@@ -69,25 +76,35 @@ class _SyncDialogState extends State<SyncDialog> {
       ),
     );
     if (ok != true || !mounted) return;
-    final f = ctl.backupLocalState('prima_di_PC_a_Mixer');
+    final String backup;
+    try {
+      backup = ctl.backupLocalState('prima_di_PC_a_Mixer').path;
+    } on Object catch (e) {
+      // senza backup l'invio non parte
+      ctl.log('E', 'backup prima di PC → Mixer non riuscito: $e');
+      setState(() => _result = tr('Backup non riuscito ({p0}): invio annullato, il mixer non è stato modificato.', {'p0': e}));
+      return;
+    }
     setState(() {
       _running = true;
       _cancel = false;
+      _result = null;
     });
-    final r = await ctl.syncToMixer((d, t) {
-      if (mounted && (d % 25 == 0 || d == t)) {
-        setState(() {
-          _done = d;
-          _total = t;
-        });
-      }
-    }, () => _cancel);
-    if (!mounted) return;
-    setState(() {
-      _running = false;
-      _result = tr('{p0} righe inviate. Backup: {p1}', {'p0': r.completed, 'p1': f.path});
-    });
-    ctl.synced = r.ok;
+    try {
+      final r = await ctl.syncToMixer(_progress, () => _cancel);
+      _result = r.ok
+          ? tr('Invio completato: {p0} righe. Backup: {p1}', {'p0': r.completed, 'p1': backup})
+          : r.cancelled
+              ? tr('Invio interrotto dopo {p0} di {p1} righe: il mixer è stato modificato solo in parte. Backup: {p2}', {'p0': r.completed, 'p1': r.total, 'p2': backup})
+              : tr('Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}',
+                  {'p0': r.completed, 'p1': r.total, 'p2': r.error, 'p3': backup});
+    } on Object catch (e) {
+      ctl.log('E', 'sync PC → Mixer: $e');
+      ctl.synced = false;
+      _result = tr('Errore: {p0}', {'p0': e});
+    } finally {
+      if (mounted) setState(() => _running = false);
+    }
   }
 
   @override

@@ -331,7 +331,6 @@
  "Inviare lo stato del PC al mixer?": "Send the PC state to the mixer?",
  "Tutti i parametri del mixer {p0} ({p1}) verranno sostituiti con quelli presenti in questa applicazione: {p2} nodi (canali, bus, effetti, routing, uscite).\n\nPrima dell'invio viene salvato un backup dello stato locale.\n\nAttenzione: la risposta del mixer a questo tipo di invio non è ancora stata verificata su hardware reale.": "All parameters of mixer {p0} ({p1}) will be replaced with those in this application: {p2} nodes (channels, buses, effects, routing, outputs).\n\nA backup of the local state is saved before sending.\n\nWarning: the mixer's response to this kind of transfer has not yet been verified on real hardware.",
  "Sostituisci i parametri del mixer": "Replace the mixer parameters",
- "{p0} righe inviate. Backup: {p1}": "{p0} lines sent. Backup: {p1}",
  "Connesso a {p0}": "Connected to {p0}",
  "Sessione con il SIMULATORE locale: nessun mixer reale è coinvolto.": "Session with the local SIMULATOR: no real mixer is involved.",
  "{p0} · firmware {p1} · {p2}": "{p0} · firmware {p1} · {p2}",
@@ -700,5 +699,10 @@
  "Blocca": "Lock",
  "Sblocca": "Unlock",
  "Invia": "Send",
- "es. 192.168.1.2": "e.g. 192.168.1.2"
+ "es. 192.168.1.2": "e.g. 192.168.1.2",
+ "mixer non connesso": "mixer not connected",
+ "Backup non riuscito ({p0}): invio annullato, il mixer non è stato modificato.": "Backup failed ({p0}): sending cancelled, the mixer was not changed.",
+ "Invio completato: {p0} righe. Backup: {p1}": "Sending complete: {p0} lines. Backup: {p1}",
+ "Invio interrotto dopo {p0} di {p1} righe: il mixer è stato modificato solo in parte. Backup: {p2}": "Sending stopped after {p0} of {p1} lines: the mixer was only partly changed. Backup: {p2}",
+ "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Sending failed after {p0} of {p1} lines: {p2}. The mixer may have been partly changed. Backup: {p3}"
 }

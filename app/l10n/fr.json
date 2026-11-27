@@ -331,7 +331,6 @@
  "Inviare lo stato del PC al mixer?": "Envoyer l'état du PC à la console ?",
  "Tutti i parametri del mixer {p0} ({p1}) verranno sostituiti con quelli presenti in questa applicazione: {p2} nodi (canali, bus, effetti, routing, uscite).\n\nPrima dell'invio viene salvato un backup dello stato locale.\n\nAttenzione: la risposta del mixer a questo tipo di invio non è ancora stata verificata su hardware reale.": "Tous les paramètres de la console {p0} ({p1}) seront remplacés par ceux de cette application : {p2} nœuds (canaux, bus, effets, routing, sorties).\n\nUne sauvegarde de l'état local est enregistrée avant l'envoi.\n\nAttention : la réponse de la console à ce type d'envoi n'a pas encore été vérifiée sur du matériel réel.",
  "Sostituisci i parametri del mixer": "Remplacer les paramètres de la console",
- "{p0} righe inviate. Backup: {p1}": "{p0} lignes envoyées. Sauvegarde : {p1}",
  "Connesso a {p0}": "Connecté à {p0}",
  "Sessione con il SIMULATORE locale: nessun mixer reale è coinvolto.": "Session avec le SIMULATEUR local : aucune console réelle n'est concernée.",
  "{p0} · firmware {p1} · {p2}": "{p0} · firmware {p1} · {p2}",
@@ -700,5 +699,10 @@
  "Blocca": "Verrouiller",
  "Sblocca": "Déverrouiller",
  "Invia": "Envoyer",
- "es. 192.168.1.2": "ex. 192.168.1.2"
+ "es. 192.168.1.2": "ex. 192.168.1.2",
+ "mixer non connesso": "console non connectée",
+ "Backup non riuscito ({p0}): invio annullato, il mixer non è stato modificato.": "Échec de la sauvegarde ({p0}) : envoi annulé, la console n'a pas été modifiée.",
+ "Invio completato: {p0} righe. Backup: {p1}": "Envoi terminé : {p0} lignes. Sauvegarde : {p1}",
+ "Invio interrotto dopo {p0} di {p1} righe: il mixer è stato modificato solo in parte. Backup: {p2}": "Envoi interrompu après {p0} lignes sur {p1} : la console n'a été modifiée qu'en partie. Sauvegarde : {p2}",
+ "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Échec de l'envoi après {p0} lignes sur {p1} : {p2}. La console a peut-être été modifiée en partie. Sauvegarde : {p3}"
 }

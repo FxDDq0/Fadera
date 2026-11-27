@@ -331,7 +331,6 @@
  "Inviare lo stato del PC al mixer?": "Zustand des PCs an das Mischpult senden?",
  "Tutti i parametri del mixer {p0} ({p1}) verranno sostituiti con quelli presenti in questa applicazione: {p2} nodi (canali, bus, effetti, routing, uscite).\n\nPrima dell'invio viene salvato un backup dello stato locale.\n\nAttenzione: la risposta del mixer a questo tipo di invio non è ancora stata verificata su hardware reale.": "Alle Parameter des Mischpults {p0} ({p1}) werden durch die dieser Anwendung ersetzt: {p2} Knoten (Kanäle, Busse, Effekte, Routing, Ausgänge).\n\nVor dem Senden wird eine Sicherung des lokalen Zustands gespeichert.\n\nAchtung: Die Reaktion des Mischpults auf diese Art der Übertragung ist an echter Hardware noch nicht verifiziert.",
  "Sostituisci i parametri del mixer": "Parameter des Mischpults ersetzen",
- "{p0} righe inviate. Backup: {p1}": "{p0} Zeilen gesendet. Sicherung: {p1}",
  "Connesso a {p0}": "Verbunden mit {p0}",
  "Sessione con il SIMULATORE locale: nessun mixer reale è coinvolto.": "Sitzung mit dem lokalen SIMULATOR: Kein echtes Mischpult ist beteiligt.",
  "{p0} · firmware {p1} · {p2}": "{p0} · Firmware {p1} · {p2}",
@@ -700,5 +699,10 @@
  "Blocca": "Sperren",
  "Sblocca": "Entsperren",
  "Invia": "Senden",
- "es. 192.168.1.2": "z. B. 192.168.1.2"
+ "es. 192.168.1.2": "z. B. 192.168.1.2",
+ "mixer non connesso": "Mischpult nicht verbunden",
+ "Backup non riuscito ({p0}): invio annullato, il mixer non è stato modificato.": "Sicherung fehlgeschlagen ({p0}): Senden abgebrochen, das Mischpult wurde nicht verändert.",
+ "Invio completato: {p0} righe. Backup: {p1}": "Senden abgeschlossen: {p0} Zeilen. Sicherung: {p1}",
+ "Invio interrotto dopo {p0} di {p1} righe: il mixer è stato modificato solo in parte. Backup: {p2}": "Senden nach {p0} von {p1} Zeilen abgebrochen: das Mischpult wurde nur teilweise verändert. Sicherung: {p2}",
+ "Invio non riuscito dopo {p0} di {p1} righe: {p2}. Il mixer potrebbe essere stato modificato in parte. Backup: {p3}": "Senden nach {p0} von {p1} Zeilen fehlgeschlagen: {p2}. Das Mischpult wurde möglicherweise teilweise verändert. Sicherung: {p3}"
 }
