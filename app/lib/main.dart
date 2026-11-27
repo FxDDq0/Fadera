@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'brand.g.dart';
 import 'capture.dart';
 import 'controller/app_controller.dart';
+import 'error_handling.dart';
 import 'controller/shortcuts.dart';
 import 'theme.dart';
 import 'ui/master_and_quick.dart';
@@ -35,6 +36,7 @@ void main(List<String> args) {
   }
   // --demo: preferenze dimostrative non salvate; --connect=host[:porta]: connessione e sync automatiche
   final ctl = AppController(prefs: args.contains('--demo') ? capturePrefs() : null);
+  installErrorHandlers(ctl);
   runApp(ControllerApp(controller: ctl, splash: true));
   final target = arg('connect');
   if (target != null) {

@@ -717,5 +717,6 @@
  "File non inviato: il mixer non è più raggiungibile.": "File not sent: the mixer can no longer be reached.",
  "File inviato: {p0} righe.": "File sent: {p0} lines.",
  "Invio incompleto: {p0} di {p1} righe. Il mixer è stato modificato solo in parte; il backup è nella cartella backup.": "Incomplete send: {p0} of {p1} lines. The mixer was only partly changed; the backup is in the backup folder.",
- "Esportazione non riuscita: {p0}": "Export failed: {p0}"
+ "Esportazione non riuscita: {p0}": "Export failed: {p0}",
+ "Questa parte non può essere mostrata. Dettagli in ⚙ → Diagnostica.": "This part cannot be shown. Details in ⚙ → Diagnostics."
 }

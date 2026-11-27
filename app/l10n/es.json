@@ -717,5 +717,6 @@
  "File non inviato: il mixer non è più raggiungibile.": "Archivo no enviado: el mezclador ya no está accesible.",
  "File inviato: {p0} righe.": "Archivo enviado: {p0} líneas.",
  "Invio incompleto: {p0} di {p1} righe. Il mixer è stato modificato solo in parte; il backup è nella cartella backup.": "Envío incompleto: {p0} de {p1} líneas. El mezclador se modificó solo en parte; la copia de seguridad está en la carpeta backup.",
- "Esportazione non riuscita: {p0}": "La exportación falló: {p0}"
+ "Esportazione non riuscita: {p0}": "La exportación falló: {p0}",
+ "Questa parte non può essere mostrata. Dettagli in ⚙ → Diagnostica.": "Esta parte no se puede mostrar. Detalles en ⚙ → Diagnóstico."
 }

@@ -717,5 +717,6 @@
  "File non inviato: il mixer non è più raggiungibile.": "Arquivo não enviado: a mesa não está mais acessível.",
  "File inviato: {p0} righe.": "Arquivo enviado: {p0} linhas.",
  "Invio incompleto: {p0} di {p1} righe. Il mixer è stato modificato solo in parte; il backup è nella cartella backup.": "Envio incompleto: {p0} de {p1} linhas. A mesa foi alterada apenas em parte; o backup está na pasta backup.",
- "Esportazione non riuscita: {p0}": "Falha na exportação: {p0}"
+ "Esportazione non riuscita: {p0}": "Falha na exportação: {p0}",
+ "Questa parte non può essere mostrata. Dettagli in ⚙ → Diagnostica.": "Esta parte não pode ser mostrada. Detalhes em ⚙ → Diagnóstico."
 }

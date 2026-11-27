@@ -717,5 +717,6 @@
  "File non inviato: il mixer non è più raggiungibile.": "Fichier non envoyé : la console n'est plus joignable.",
  "File inviato: {p0} righe.": "Fichier envoyé : {p0} lignes.",
  "Invio incompleto: {p0} di {p1} righe. Il mixer è stato modificato solo in parte; il backup è nella cartella backup.": "Envoi incomplet : {p0} lignes sur {p1}. La console n'a été modifiée qu'en partie ; la sauvegarde est dans le dossier backup.",
- "Esportazione non riuscita: {p0}": "Échec de l'exportation : {p0}"
+ "Esportazione non riuscita: {p0}": "Échec de l'exportation : {p0}",
+ "Questa parte non può essere mostrata. Dettagli in ⚙ → Diagnostica.": "Cette partie ne peut pas être affichée. Détails dans ⚙ → Diagnostic."
 }
