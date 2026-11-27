@@ -27,6 +27,13 @@ import 'transport.dart';
 
 const int kX32Port = 10023;
 
+/// Testo di `/xinfo` pronto da mostrare: senza caratteri di controllo e al massimo 64 caratteri
+/// (le risposte arrivano dalla rete e un dispositivo qualunque può fingersi un mixer).
+String cleanInfoText(String s) {
+  final t = s.replaceAll(RegExp(r'[\x00-\x1f\x7f]+'), ' ').replaceAll(RegExp(r' {2,}'), ' ').trim();
+  return t.length > 64 ? t.substring(0, 64) : t;
+}
+
 /// Identità di un mixer (risposta `/xinfo`, ordine dei campi verificato in T01b).
 class MixerInfo {
   const MixerInfo({required this.ip, required this.name, required this.model, required this.firmware, required this.address, this.port = kX32Port});
@@ -192,7 +199,7 @@ class X32Client {
       try {
         for (final m in decodeOsc(d.data)) {
           if (m.address == '/xinfo' && m.args.length == 4 && m.args.every((a) => a is OscString)) {
-            final a = m.args.cast<OscString>().map((s) => s.value).toList();
+            final a = m.args.cast<OscString>().map((s) => cleanInfoText(s.value)).toList();
             found.putIfAbsent('${d.address.address}:${d.port}',
                 () => MixerInfo(ip: a[0], name: a[1], model: a[2], firmware: a[3], address: d.address, port: d.port));
           }
@@ -528,8 +535,10 @@ class X32Client {
   // ---------------------------------------------------------- ricezione
 
   void _onDatagram(UdpPacket d) {
-    if (_host == null || d.address.address != _host!.address) {
-      return; // solo il mixer connesso (la discovery usa un trasporto separato)
+    if (_host == null || d.address.address != _host!.address || d.port != _port) {
+      // solo il mixer connesso, dalla sua porta OSC (la discovery usa un trasporto separato):
+      // un altro programma sullo stesso IP o da un'altra porta non può cambiare lo stato
+      return;
     }
     List<OscMessage> msgs;
     try {
@@ -564,7 +573,7 @@ class X32Client {
     }
     if (a == '/xinfo') {
       if (m.args.length == 4 && m.args.every((x) => x is OscString) && _infoWait != null) {
-        final v = m.args.cast<OscString>().map((s) => s.value).toList();
+        final v = m.args.cast<OscString>().map((s) => cleanInfoText(s.value)).toList();
         _infoWait!.complete(MixerInfo(ip: v[0], name: v[1], model: v[2], firmware: v[3], address: _host!, port: _port));
       }
       return;

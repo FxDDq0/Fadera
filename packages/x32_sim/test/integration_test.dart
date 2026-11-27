@@ -219,6 +219,18 @@ void main() {
     await c.dispose();
   });
 
+  test('pacchetti dall\'IP del mixer ma da un\'altra porta: ignorati', () async {
+    final c = await newClient();
+    await c.connect(lo, port: sim.port);
+    final before = c.state.getIdx('/ch/05/mix/fader');
+    final spoof = await RawDatagramSocket.bind(lo, 0);
+    spoof.send(encodeOsc(OscMessage('node', [const OscString('/ch/05/mix ON  +10.0 ON +0 OFF   -oo')])), lo, c.transport.localPort);
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    expect(c.state.getIdx('/ch/05/mix/fader'), before);
+    spoof.close();
+    await c.dispose();
+  });
+
   test('sync PC → Mixer interrotta dalla perdita del collegamento: esito con errore, nessuna eccezione', () async {
     final c = await newClient();
     await c.connect(lo, port: sim.port);

@@ -89,6 +89,15 @@ class NodeValue {
   }
 }
 
+/// Nodi fuori dalla tabella di sync accettati al massimo (scene, snippet, cue ne usano meno di 400).
+const kMaxDynamicNodes = 4096;
+
+/// Lunghezza massima di una riga di nodo accettata.
+const kMaxNodeLineLength = 2048;
+
+/// Avvisi di lettura conservati al massimo.
+const kMaxWarnings = 500;
+
 class MixerState {
   MixerState({bool initDefaults = true}) {
     for (final p in kSyncNodes) {
@@ -107,6 +116,15 @@ class MixerState {
 
   /// Avvisi di parsing (righe con campi inattesi, valori fuori tabella).
   List<String> get warnings => List.unmodifiable(_warnings);
+
+  /// Avvisi conservati al massimo: i più vecchi lasciano il posto ai nuovi.
+  void _warn(String w) {
+    _warnings.add(w);
+    if (_warnings.length > kMaxWarnings) _warnings.removeRange(0, _warnings.length - kMaxWarnings);
+  }
+
+  int _dynamicNodes = 0;
+  static final _dynamicPath = RegExp(r'^/[A-Za-z0-9_\-]+(/[A-Za-z0-9_\-]+){0,7}$');
 
   Iterable<NodeValue> get nodes => _nodes.values;
   NodeValue? node(String path) => _nodes[path];
@@ -291,10 +309,23 @@ class MixerState {
     final (path, tokens) = split;
     var n = _nodes[path];
     if (n == null) {
-      // Nodi fuori dalla tabella di sync (es. /-show/showfile/scene/NNN): conservati come opachi.
-      if (!path.startsWith('/')) return false;
+      // Nodi fuori dalla tabella di sync (es. /-show/showfile/scene/NNN): conservati come opachi,
+      // entro limiti di sicurezza (percorso plausibile, riga corta, numero massimo di nodi).
+      if (!_dynamicPath.hasMatch(path) || line.length > kMaxNodeLineLength) {
+        _warn('riga di nodo rifiutata: ${path.length > 64 ? '${path.substring(0, 64)}…' : path}');
+        return false;
+      }
+      if (_dynamicNodes >= kMaxDynamicNodes) {
+        if (_dynamicNodes == kMaxDynamicNodes) _warn('raggiunto il limite di $kMaxDynamicNodes nodi fuori tabella: gli altri sono ignorati');
+        _dynamicNodes = kMaxDynamicNodes + 1;
+        return false;
+      }
+      _dynamicNodes++;
       _addNode(path);
       n = _nodes[path]!;
+    } else if (line.length > kMaxNodeLineLength) {
+      _warn('$path: riga troppo lunga (${line.length} caratteri), ignorata');
+      return false;
     }
     if (n.spec.opaque) {
       final text = tokens.map((t) => t.raw).join(' ');
@@ -307,7 +338,7 @@ class MixerState {
     }
     if (n.spec.dynamicFx != null && n.fields.isEmpty) _rebuildFxPar(n.spec.dynamicFx!);
     if (tokens.length != n.fields.length) {
-      _warnings.add('$path: ${tokens.length} valori invece di ${n.fields.length}');
+      _warn('$path: ${tokens.length} valori invece di ${n.fields.length}');
     }
     final count = tokens.length < n.fields.length ? tokens.length : n.fields.length;
     for (var i = 0; i < count; i++) {
@@ -322,7 +353,7 @@ class MixerState {
         default:
           v = f.parseText(t.text);
           if (v == null) {
-            _warnings.add('$path/${f.name}: valore non valido "${t.text}"');
+            _warn('$path/${f.name}: valore non valido "${t.text}"');
             continue;
           }
       }
