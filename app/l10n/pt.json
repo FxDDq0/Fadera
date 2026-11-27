@@ -184,9 +184,6 @@
  "Nessun mixer ha risposto alla ricerca.": "Nenhum mixer respondeu à pesquisa.",
  "Connetti": "Conectar",
  "Indirizzo manuale": "Endereço manual",
- "es. 192.168.1.2  oppure  127.0.0.1 per il simulatore": "ex. 192.168.1.2  ou  127.0.0.1 para o simulador",
- "Nessun mixer a disposizione? Il simulatore integrato riproduce un X32 sul PC (dati dimostrativi).": "Sem mixer por perto? O simulador integrado reproduz um X32 no PC (dados de demonstração).",
- "Prova senza mixer": "Testar sem mixer",
  "Disconnetti": "Desconectar",
  "Scrivi l'indirizzo IP del mixer (si legge sul mixer in Setup → Network), per esempio 192.168.1.2.": "Digite o endereço IP do mixer (visível no mixer em Setup → Network), por exemplo 192.168.1.2.",
  "Indirizzo non valido: \"{p0}\". Usa la forma 192.168.1.2 oppure 192.168.1.2:10023.": "Endereço inválido: \"{p0}\". Use a forma 192.168.1.2 ou 192.168.1.2:10023.",
@@ -344,8 +341,6 @@
  "Più tardi": "Mais tarde",
  "PC → Mixer…": "PC → Mixer…",
  "Mixer → PC (consigliato)": "Mixer → PC (recomendado)",
- "Simulatore non avviato": "Simulador não iniciado",
- "Il simulatore integrato non è partito: {p0}": "O simulador integrado não iniciou: {p0}",
  "Benvenuto in {p0}": "Bem-vindo ao {p0}",
  "Fadera controlla dal PC i mixer digitali della famiglia X32/M32 tramite la rete (protocollo OSC). Verificata su Behringer X32 Producer, firmware 4.15; gli altri modelli non sono ancora verificati.": "O Fadera controla pelo PC os mixers digitais da família X32/M32 através da rede (protocolo OSC). Verificado no Behringer X32 Producer, firmware 4.15; os outros modelos ainda não foram verificados.",
  "Stessa rete del mixer": "Mesma rede do mixer",
@@ -355,7 +350,6 @@
  "Il primo collegamento non cambia nulla": "A primeira conexão não altera nada",
  "Al collegamento Fadera legge lo stato del mixer e non invia modifiche. Il mixer cambia solo quando muovi un controllo.": "Ao conectar, o Fadera lê o estado do mixer e não envia alterações. O mixer só muda quando você move um controle.",
  "Fadera è un progetto indipendente, non affiliato a Behringer, Midas o Music Tribe.": "O Fadera é um projeto independente, não afiliado à Behringer, Midas ou Music Tribe.",
- "Prova con il simulatore": "Testar com o simulador",
  "Cerca il mixer": "Procurar o mixer",
  "Batteria e percussioni": "Bateria e percussão",
  "Bassi e chitarre": "Baixos e guitarras",
@@ -705,5 +699,6 @@
  "Ingressi": "Entradas",
  "Blocca": "Bloquear",
  "Sblocca": "Desbloquear",
- "Invia": "Enviar"
+ "Invia": "Enviar",
+ "es. 192.168.1.2": "ex.: 192.168.1.2"
 }

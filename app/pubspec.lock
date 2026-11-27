@@ -229,7 +229,7 @@ packages:
     source: path
     version: "0.1.0"
   x32_sim:
-    dependency: "direct main"
+    dependency: "direct dev"
     description:
       path: "../packages/x32_sim"
       relative: true

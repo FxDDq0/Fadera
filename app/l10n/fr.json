@@ -184,9 +184,6 @@
  "Nessun mixer ha risposto alla ricerca.": "Aucune console n'a répondu à la recherche.",
  "Connetti": "Connecter",
  "Indirizzo manuale": "Adresse manuelle",
- "es. 192.168.1.2  oppure  127.0.0.1 per il simulatore": "ex. 192.168.1.2  ou  127.0.0.1 pour le simulateur",
- "Nessun mixer a disposizione? Il simulatore integrato riproduce un X32 sul PC (dati dimostrativi).": "Pas de console sous la main ? Le simulateur intégré reproduit une X32 sur le PC (données de démonstration).",
- "Prova senza mixer": "Essayer sans console",
  "Disconnetti": "Déconnecter",
  "Scrivi l'indirizzo IP del mixer (si legge sul mixer in Setup → Network), per esempio 192.168.1.2.": "Saisissez l'adresse IP de la console (indiquée sur la console dans Setup → Network), par exemple 192.168.1.2.",
  "Indirizzo non valido: \"{p0}\". Usa la forma 192.168.1.2 oppure 192.168.1.2:10023.": "Adresse non valide : « {p0} ». Utilisez la forme 192.168.1.2 ou 192.168.1.2:10023.",
@@ -344,8 +341,6 @@
  "Più tardi": "Plus tard",
  "PC → Mixer…": "PC → Console…",
  "Mixer → PC (consigliato)": "Console → PC (recommandé)",
- "Simulatore non avviato": "Simulateur non démarré",
- "Il simulatore integrato non è partito: {p0}": "Le simulateur intégré n'a pas démarré : {p0}",
  "Benvenuto in {p0}": "Bienvenue dans {p0}",
  "Fadera controlla dal PC i mixer digitali della famiglia X32/M32 tramite la rete (protocollo OSC). Verificata su Behringer X32 Producer, firmware 4.15; gli altri modelli non sono ancora verificati.": "Fadera contrôle depuis le PC les consoles numériques de la famille X32/M32 via le réseau (protocole OSC). Vérifiée sur Behringer X32 Producer, firmware 4.15 ; les autres modèles ne sont pas encore vérifiés.",
  "Stessa rete del mixer": "Même réseau que la console",
@@ -355,7 +350,6 @@
  "Il primo collegamento non cambia nulla": "La première connexion ne change rien",
  "Al collegamento Fadera legge lo stato del mixer e non invia modifiche. Il mixer cambia solo quando muovi un controllo.": "À la connexion, Fadera lit l'état de la console et n'envoie aucune modification. La console ne change que lorsque vous bougez une commande.",
  "Fadera è un progetto indipendente, non affiliato a Behringer, Midas o Music Tribe.": "Fadera est un projet indépendant, non affilié à Behringer, Midas ou Music Tribe.",
- "Prova con il simulatore": "Essayer avec le simulateur",
  "Cerca il mixer": "Rechercher la console",
  "Batteria e percussioni": "Batterie et percussions",
  "Bassi e chitarre": "Basses et guitares",
@@ -705,5 +699,6 @@
  "Ingressi": "Entrées",
  "Blocca": "Verrouiller",
  "Sblocca": "Déverrouiller",
- "Invia": "Envoyer"
+ "Invia": "Envoyer",
+ "es. 192.168.1.2": "ex. 192.168.1.2"
 }

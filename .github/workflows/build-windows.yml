@@ -62,8 +62,6 @@ jobs:
         shell: pwsh
         run: |
           Push-Location app; flutter build windows --release; if ($LASTEXITCODE) { exit 1 }; Pop-Location
-          New-Item -ItemType Directory -Force build | Out-Null
-          Push-Location packages\x32_sim; dart compile exe bin\x32_sim.dart -o ..\..\build\x32_sim.exe; if ($LASTEXITCODE) { exit 1 }; Pop-Location
 
       - name: Portable package
         shell: pwsh
@@ -125,13 +123,12 @@ jobs:
           $dir = "$env:RUNNER_TEMP\FaderaTest"
           $p = Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER',"/DIR=$dir" -Wait -PassThru
           if ($p.ExitCode) { throw "install failed: $($p.ExitCode)" }
-          foreach ($f in 'Fadera.exe','flutter_windows.dll','vcruntime140.dll','data\app.so','data\flutter_assets\NOTICES.Z','simulatore\x32_sim.exe') {
+          foreach ($f in 'Fadera.exe','flutter_windows.dll','vcruntime140.dll','data\app.so','data\flutter_assets\NOTICES.Z') {
             if (-not (Test-Path (Join-Path $dir $f))) { throw "missing after install: $f" }
           }
+          # the program ships no simulator (it exists only for the automated tests)
+          if (Test-Path (Join-Path $dir 'simulatore')) { throw "simulator folder must not be installed" }
           (Get-Item (Join-Path $dir 'Fadera.exe')).VersionInfo | Format-List ProductName, ProductVersion, FileVersion
-          # standalone simulator starts on 127.0.0.1 (pure Dart, no Flutter needed)
-          $sim = Start-Process (Join-Path $dir 'simulatore\x32_sim.exe') -ArgumentList '--port','10050' -PassThru
-          Start-Sleep 3; if ($sim.HasExited) { throw "simulator exited" }; Stop-Process $sim.Id -Force
           # the application starts (informative: the runner desktop may not allow a GPU window)
           $app = Start-Process (Join-Path $dir 'Fadera.exe') -PassThru
           Start-Sleep 10; $app.Refresh()

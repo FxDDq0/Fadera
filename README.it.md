@@ -30,7 +30,6 @@ Windows x64 · OSC sulla rete locale · progetto indipendente</p>
 * Meter dei canali, rack degli effetti con editor grafici, panoramica del routing (modifica bloccata per impostazione predefinita), scene, snippet e cue.
 * Layer utente, barra dei controlli rapidi, scorciatoie da tastiera, temi colore, modalità touch.
 * **Sicura:** il collegamento *legge* soltanto lo stato del mixer; nulla cambia finché non muovi un controllo.
-* **Simulatore integrato** per provare Fadera senza mixer.
 * **Sei lingue:** italiano, English, Español, Français, Deutsch, Português (automatica da Windows, o scelta nelle *Impostazioni*).
 
 ## Compatibilità
@@ -56,7 +55,7 @@ Windows 10 o 11 a 64 bit, PC sulla **stessa rete del mixer** (cavo o Wi-Fi del r
 ## Collegamento al mixer
 
 1. PC sulla stessa rete del mixer: l'hotspot del telefono è un'altra rete.
-2. Al primo avvio scegli **Cerca il mixer** o **Prova con il simulatore**.
+2. Al primo avvio scegli **Cerca il mixer**.
 3. Scegli il mixer trovato o scrivi il suo indirizzo IP (sul mixer: *Setup → Network*).
 
 ## Segnalazioni

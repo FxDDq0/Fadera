@@ -6,10 +6,10 @@
 |---|---|
 | `app/` | Flutter desktop application (`lib/` code, `test/` widget tests, `windows/` runner, `assets/`) |
 | `packages/x32_core/` | Pure-Dart protocol engine: OSC, transport, mixer state, send queue, meters (`lib/`, `test/`, `tool/` hardware test tools) |
-| `packages/x32_sim/` | Pure-Dart mixer simulator, used by the tests and built into the app (listens on 127.0.0.1 only) |
+| `packages/x32_sim/` | Pure-Dart mixer simulator, used only by the automated tests and not shipped with the app (listens on 127.0.0.1 only) |
 | `branding/` | Name, version and visual identity (`brand.json`), generated logo and icons (`out/`), templates |
 | `installer/` | Inno Setup script for the Windows installer (generated from `branding/templates/installer.iss`) |
-| `tools/` | `package.ps1` (portable package), `brand_apply.py` and `make_icon.py` (branding generator), demo scene |
+| `tools/` | `package.ps1` (portable package), `brand_apply.py` and `make_icon.py` (branding generator) |
 | `docs/` | User and technical documentation, screenshots |
 | `.github/workflows/` | Build, test, installer and release automation |
 
@@ -30,9 +30,8 @@ cd packages\x32_core; dart pub get; cd ..\x32_sim; dart pub get; cd ..\..\app; f
 # tests
 cd packages\x32_core; dart test; cd ..\x32_sim; dart test; cd ..\..\app; flutter test; cd ..
 
-# application and standalone simulator
+# application
 cd app; flutter build windows --release; cd ..
-cd packages\x32_sim; dart compile exe bin\x32_sim.dart -o ..\..\build\x32_sim.exe; cd ..\..
 
 # portable package (dist\Fadera-<version>-windows-x64.zip) and installer (dist\Fadera-<version>-setup.exe)
 powershell -File tools\package.ps1
@@ -43,12 +42,11 @@ The version comes from `branding/brand.json`. After changing it run `python -I t
 
 ## Running against the simulator
 
-The app has a built-in simulator (*Connect → Try without a mixer*). The standalone simulator can also be started from a terminal:
+The simulator is a developer tool and is not part of the program. To try a development build without a mixer, start it from a terminal and connect to `127.0.0.1`:
 
 ```powershell
 cd packages\x32_sim
-dart run x32_sim --port 10023 --init ..\..\tools\demo_scene.txt
-```
+dart run x32_sim --port 10023```
 
 ## Hardware test tools
 

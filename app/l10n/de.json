@@ -184,9 +184,6 @@
  "Nessun mixer ha risposto alla ricerca.": "Kein Mischpult hat auf die Suche geantwortet.",
  "Connetti": "Verbinden",
  "Indirizzo manuale": "Manuelle Adresse",
- "es. 192.168.1.2  oppure  127.0.0.1 per il simulatore": "z. B. 192.168.1.2  oder  127.0.0.1 für den Simulator",
- "Nessun mixer a disposizione? Il simulatore integrato riproduce un X32 sul PC (dati dimostrativi).": "Kein Mischpult zur Hand? Der integrierte Simulator bildet ein X32 auf dem PC nach (Demodaten).",
- "Prova senza mixer": "Ohne Mischpult ausprobieren",
  "Disconnetti": "Trennen",
  "Scrivi l'indirizzo IP del mixer (si legge sul mixer in Setup → Network), per esempio 192.168.1.2.": "IP-Adresse des Mischpults eingeben (am Mischpult unter Setup → Network zu finden), z. B. 192.168.1.2.",
  "Indirizzo non valido: \"{p0}\". Usa la forma 192.168.1.2 oppure 192.168.1.2:10023.": "Ungültige Adresse: „{p0}\". Form 192.168.1.2 oder 192.168.1.2:10023 verwenden.",
@@ -344,8 +341,6 @@
  "Più tardi": "Später",
  "PC → Mixer…": "PC → Mischpult…",
  "Mixer → PC (consigliato)": "Mischpult → PC (empfohlen)",
- "Simulatore non avviato": "Simulator nicht gestartet",
- "Il simulatore integrato non è partito: {p0}": "Der integrierte Simulator ist nicht gestartet: {p0}",
  "Benvenuto in {p0}": "Willkommen bei {p0}",
  "Fadera controlla dal PC i mixer digitali della famiglia X32/M32 tramite la rete (protocollo OSC). Verificata su Behringer X32 Producer, firmware 4.15; gli altri modelli non sono ancora verificati.": "Fadera steuert digitale Mischpulte der X32/M32-Familie vom PC aus über das Netzwerk (OSC-Protokoll). Verifiziert mit Behringer X32 Producer, Firmware 4.15; andere Modelle sind noch nicht verifiziert.",
  "Stessa rete del mixer": "Gleiches Netzwerk wie das Mischpult",
@@ -355,7 +350,6 @@
  "Il primo collegamento non cambia nulla": "Das Verbinden ändert nichts",
  "Al collegamento Fadera legge lo stato del mixer e non invia modifiche. Il mixer cambia solo quando muovi un controllo.": "Beim Verbinden liest Fadera den Zustand des Mischpults und sendet keine Änderungen. Das Mischpult ändert sich erst, wenn du einen Regler bewegst.",
  "Fadera è un progetto indipendente, non affiliato a Behringer, Midas o Music Tribe.": "Fadera ist ein unabhängiges Projekt, nicht verbunden mit Behringer, Midas oder Music Tribe.",
- "Prova con il simulatore": "Mit dem Simulator ausprobieren",
  "Cerca il mixer": "Mischpult suchen",
  "Batteria e percussioni": "Schlagzeug und Percussion",
  "Bassi e chitarre": "Bässe und Gitarren",
@@ -705,5 +699,6 @@
  "Ingressi": "Eingänge",
  "Blocca": "Sperren",
  "Sblocca": "Entsperren",
- "Invia": "Senden"
+ "Invia": "Senden",
+ "es. 192.168.1.2": "z. B. 192.168.1.2"
 }

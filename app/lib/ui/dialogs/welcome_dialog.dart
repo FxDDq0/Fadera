@@ -5,7 +5,6 @@ import '../../controller/app_controller.dart';
 import '../../theme.dart';
 import 'connect_dialog.dart';
 import '../widgets/language_picker.dart';
-import 'sync_dialog.dart';
 import '../../l10n/l10n.dart';
 
 /// Mostra la schermata di benvenuto al primo avvio (una sola volta).
@@ -41,27 +40,6 @@ Future<void> showWelcome(BuildContext context, AppController ctl) async {
   switch (choice) {
     case 'search':
       await showDialog(context: context, builder: (_) => ConnectDialog(ctl: ctl));
-    case 'sim':
-      await startDemo(context, ctl);
-  }
-}
-
-/// Avvia il simulatore integrato e la sincronizzazione (lettura), con un messaggio chiaro se non riesce.
-Future<void> startDemo(BuildContext context, AppController ctl) async {
-  try {
-    await ctl.connectBuiltinSimulator();
-    if (!context.mounted) return;
-    await showDialog(context: context, barrierDismissible: false, builder: (_) => SyncDialog(ctl: ctl));
-  } on Object catch (e) {
-    if (!context.mounted) return;
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(tr('Simulatore non avviato')),
-        content: Text(tr('Il simulatore integrato non è partito: {p0}', {'p0': e})),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(tr('Chiudi')))],
-      ),
-    );
   }
 }
 
@@ -120,12 +98,6 @@ class WelcomeDialog extends StatelessWidget {
       ),
       actions: [
         TextButton(key: const ValueKey('welcome-later'), onPressed: () => Navigator.pop(context, 'later'), child: Text(tr('Più tardi'))),
-        OutlinedButton.icon(
-          key: const ValueKey('welcome-sim'),
-          onPressed: () => Navigator.pop(context, 'sim'),
-          icon: const Icon(Icons.science_outlined, size: 18),
-          label: Text(tr('Prova con il simulatore')),
-        ),
         FilledButton.icon(
           key: const ValueKey('welcome-search'),
           onPressed: () => Navigator.pop(context, 'search'),

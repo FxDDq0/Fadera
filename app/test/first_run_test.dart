@@ -1,4 +1,4 @@
-// Primo avvio: schermata di benvenuto, simulatore integrato, messaggi di errore comprensibili.
+// Primo avvio: schermata di benvenuto e messaggi di errore comprensibili.
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -20,6 +20,9 @@ void main() {
     await t.pump(const Duration(milliseconds: 100));
     expect(find.byKey(const ValueKey('welcome')), findsOneWidget);
     expect(find.textContaining('non affiliato'), findsOneWidget);
+    // il programma non offre più il simulatore
+    expect(find.byKey(const ValueKey('welcome-sim')), findsNothing);
+    expect(find.textContaining('simulatore'), findsNothing);
     await t.tap(find.byKey(const ValueKey('welcome-later')));
     await t.pump(const Duration(milliseconds: 300));
     expect(find.byKey(const ValueKey('welcome')), findsNothing);
@@ -33,18 +36,14 @@ void main() {
     await t.pump(const Duration(seconds: 3));
   });
 
-  testWidgets('simulatore integrato: avvio, sync in sola lettura, arresto alla disconnessione', (t) async {
-    final ctl = AppController(prefs: Prefs()..persistent = false);
-    await t.runAsync(() async {
-      final info = await ctl.connectBuiltinSimulator();
-      expect(info.isSimulator, isTrue);
-      expect(ctl.usingBuiltinSimulator, isTrue);
-      final r = await ctl.syncFromMixer((_, _) {}, () => false);
-      expect(r.ok, isTrue);
-      expect(ctl.state.getString('/ch/01/config/name'), isNotEmpty);
-      await ctl.disconnect();
-      expect(ctl.usingBuiltinSimulator, isFalse);
-    });
+  // Controllo sul sorgente (la finestra di connessione cerca in rete appena si apre: qui non si invia nulla).
+  test('il programma non contiene più il simulatore', () {
+    for (final f in ['lib/ui/dialogs/connect_dialog.dart', 'lib/ui/dialogs/welcome_dialog.dart', 'lib/controller/app_controller.dart']) {
+      final src = File(f).readAsStringSync();
+      expect(src.contains('x32_sim'), isFalse, reason: f);
+      expect(src.contains('Prova senza mixer') || src.contains('Prova con il simulatore'), isFalse, reason: f);
+    }
+    expect(File('pubspec.yaml').readAsStringSync().split('dev_dependencies:').first.contains('x32_sim'), isFalse);
   });
 
   test('messaggi di errore della connessione comprensibili', () {

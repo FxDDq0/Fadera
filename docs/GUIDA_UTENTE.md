@@ -4,7 +4,7 @@ Controller professionale per mixer digitali. Versione 1.0.0.
 
 > Pensato per i mixer della famiglia Behringer X32 / Midas M32 (protocollo OSC); verificato solo su Behringer X32 Producer con firmware 4.15. Fadera è un progetto indipendente: non è affiliato, approvato o sostenuto da Behringer, Midas o Music Tribe. I nomi X32 e M32 e i rispettivi marchi appartengono ai loro proprietari.
 
-> Versione di sviluppo. Provata con il simulatore e con test automatici; **non ancora provata su un mixer reale**. Prima di usarla in uno spettacolo leggi "Limiti attuali".
+> Le funzioni non ancora provate su un mixer reale sono indicate in "Limiti attuali": leggili prima di usare Fadera in uno spettacolo.
 
 ## Avvio
 
@@ -18,10 +18,6 @@ Controller professionale per mixer digitali. Versione 1.0.0.
    * **PC → Mixer**: sostituisce i parametri del mixer con quelli dell'app. Chiede una seconda conferma e salva prima un backup.
 
 L'indicatore diventa verde quando sei connesso e sincronizzato, arancione se connesso ma non sincronizzato, rosso se il mixer non risponde (l'app riprova da sola).
-
-## Provare senza mixer
-
-Avvia `simulatore\x32_sim.exe`, poi in Fadera connettiti a `127.0.0.1`. La fascia viola "SESSIONE SIMULATA" ricorda che non c'è un mixer reale.
 
 ## Uso
 

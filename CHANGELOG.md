@@ -4,6 +4,10 @@ All notable changes to Fadera are listed here. Dates are in YYYY-MM-DD format.
 
 ## Unreleased
 
+### Removed
+
+* The built-in simulator is no longer part of the program: the *Try with the simulator* / *Try without a mixer* buttons are gone and the package no longer contains `simulatore\x32_sim.exe`. The simulator remains in the source tree only for the automated tests.
+
 ## 1.0.0 — 2026-11-24
 
 First public release for Windows x64. Some advanced features are not yet verified on hardware: see [Known limitations](docs/KNOWN_LIMITATIONS.md).

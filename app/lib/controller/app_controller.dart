@@ -4,9 +4,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:x32_core/x32_core.dart';
-import 'package:x32_sim/x32_sim.dart';
 
 import '../design/tokens.dart';
 import '../ui/widgets/controls.dart' show MeterSettings;
@@ -433,11 +431,8 @@ class AppController extends ChangeNotifier {
   }
 
   /// Si connette; il risultato è vero solo con una risposta reale del mixer.
-  Future<MixerInfo> connect(String host, {int port = kX32Port, bool keepSimulator = false}) async {
-    final sim = keepSimulator ? _builtinSim : null;
-    if (keepSimulator) _builtinSim = null; // non va fermato dalla disconnessione qui sotto
+  Future<MixerInfo> connect(String host, {int port = kX32Port}) async {
     await disconnect();
-    _builtinSim = sim;
     final addr = (await InternetAddress.lookup(host)).firstWhere((a) => a.type == InternetAddressType.IPv4);
     final t = await UdpTransport.bind();
     final c = X32Client(transport: t, state: state)..autoReconnect = prefs.autoReconnect;
@@ -474,20 +469,6 @@ class AppController extends ChangeNotifier {
     }
   }
 
-  /// Simulatore integrato (prova senza mixer): gira dentro l'app, solo su 127.0.0.1.
-  X32Simulator? _builtinSim;
-  bool get usingBuiltinSimulator => _builtinSim != null;
-
-  /// Avvia il simulatore integrato con la scena dimostrativa e vi si collega (solo lettura: sync Mixer → PC
-  /// la fa la finestra di sincronizzazione come per un mixer vero).
-  Future<MixerInfo> connectBuiltinSimulator() async {
-    await disconnect();
-    final lines = const LineSplitter().convert(await rootBundle.loadString('assets/demo/demo_scene.txt'));
-    _builtinSim = await X32Simulator.start(port: 0, initLines: lines);
-    log('I', 'simulatore integrato avviato su 127.0.0.1:${_builtinSim!.port}');
-    return connect('127.0.0.1', port: _builtinSim!.port, keepSimulator: true);
-  }
-
   Future<void> disconnect() async {
     final c = _client;
     _client = null;
@@ -498,19 +479,9 @@ class AppController extends ChangeNotifier {
       await c.disconnect();
       await c.transport.close();
     }
-    await _stopBuiltinSimulator();
     meters.clear();
     synced = false;
     notifyListeners();
-  }
-
-  Future<void> _stopBuiltinSimulator() async {
-    final s = _builtinSim;
-    _builtinSim = null;
-    if (s != null) {
-      await s.close();
-      log('I', 'simulatore integrato fermato');
-    }
   }
 
   void _onMixerSelection(int idx) {

@@ -4,7 +4,7 @@
 
 > {{compatibility}}
 
-> Versione di sviluppo. Provata con il simulatore e con test automatici; **non ancora provata su un mixer reale**. Prima di usarla in uno spettacolo leggi "Limiti attuali".
+> Le funzioni non ancora provate su un mixer reale sono indicate in "Limiti attuali": leggili prima di usare {{name}} in uno spettacolo.
 
 ## Avvio
 
@@ -18,10 +18,6 @@
    * **PC → Mixer**: sostituisce i parametri del mixer con quelli dell'app. Chiede una seconda conferma e salva prima un backup.
 
 L'indicatore diventa verde quando sei connesso e sincronizzato, arancione se connesso ma non sincronizzato, rosso se il mixer non risponde (l'app riprova da sola).
-
-## Provare senza mixer
-
-Avvia `simulatore\x32_sim.exe`, poi in {{name}} connettiti a `127.0.0.1`. La fascia viola "SESSIONE SIMULATA" ricorda che non c'è un mixer reale.
 
 ## Uso
 

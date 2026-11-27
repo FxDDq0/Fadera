@@ -1,6 +1,5 @@
 # Creates the portable Windows package (dist\<exe>-<version>-windows-x64 and .zip with .sha256),
 # using name, version and executable from branding\brand.json.
-# Prerequisites: flutter build windows --release (in app\) and the simulator compiled to build\x32_sim.exe.
 # Usage: powershell -File tools\package.ps1 [-Suffix preview]
 param([string]$Suffix = '')
 $ErrorActionPreference = 'Stop'
@@ -10,15 +9,11 @@ $name  = if ($Suffix) { "$($brand.exeName)-$($brand.version)-$Suffix-windows-x64
 $d     = "$root\dist\$name"
 $rel   = "$root\app\build\windows\x64\runner\Release"
 if (-not (Test-Path "$rel\$($brand.exeName).exe")) { throw "Missing $rel\$($brand.exeName).exe: run the release build first." }
-if (-not (Test-Path "$root\build\x32_sim.exe")) { throw "Missing $root\build\x32_sim.exe: compile the simulator first." }
 if (Test-Path $d) { Remove-Item $d -Recurse -Force }
-New-Item -ItemType Directory -Force "$d\simulatore", "$d\documenti", "$d\marchio" | Out-Null
+New-Item -ItemType Directory -Force "$d\documenti", "$d\marchio" | Out-Null
 Copy-Item "$rel\*" $d -Recurse
 # Visual C++ runtime next to the executable (redistributable), so no separate runtime installer is needed
 foreach ($f in 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll') { Copy-Item "$env:WINDIR\System32\$f" $d }
-Copy-Item "$root\build\x32_sim.exe" "$d\simulatore\"
-Copy-Item "$root\tools\demo_scene.txt" "$d\simulatore\scena_dimostrativa.txt"
-Copy-Item "$root\docs\SIMULATORE.md" "$d\simulatore\LEGGIMI.md"
 Copy-Item "$root\docs\GUIDA_UTENTE.md" "$d\LEGGIMI.md"
 Copy-Item "$root\README.md" "$d\README.md"
 Copy-Item "$root\CHANGELOG.md", "$root\THIRD_PARTY_NOTICES.md", "$root\docs\COMPATIBILITY.md", "$root\docs\KNOWN_LIMITATIONS.md", "$root\docs\NETWORK_SETUP.md" "$d\documenti\"
