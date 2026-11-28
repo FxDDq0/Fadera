@@ -263,6 +263,36 @@ void main() {
     await c.dispose();
   });
 
+  test('sync PC → Mixer: collegamento perso a metà invio (dopo ~100 righe)', () async {
+    final c = await newClient();
+    await c.connect(lo, port: sim.port);
+    var dropped = false;
+    final r = await c.syncToMixer(onProgress: (done, total) {
+      if (!dropped && done >= 96) {
+        dropped = true;
+        unawaited(c.disconnect());
+      }
+    });
+    expect(r.ok, isFalse);
+    expect(r.error, isNotNull);
+    expect(r.completed, inInclusiveRange(96, r.total - 1));
+    await c.dispose();
+  });
+
+  test('connessione annullata da disconnect mentre il mixer non risponde: errore subito, nessuna sessione', () async {
+    final c = await newClient();
+    sim.paused = true;
+    final pending = c.connect(lo, port: sim.port).then<Object?>((_) => null, onError: (Object e) => e);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    await c.disconnect();
+    final e = await pending.timeout(const Duration(seconds: 1));
+    sim.paused = false;
+    expect(e, isA<ConnectException>());
+    expect(c.link, LinkState.disconnected);
+    await c.dispose();
+    await expectLater(c.connect(lo, port: sim.port), throwsA(isA<ConnectException>()));
+  });
+
   test('sync senza collegamento: esito con errore invece di un\'eccezione', () async {
     final c = await newClient();
     final to = await c.syncToMixer();

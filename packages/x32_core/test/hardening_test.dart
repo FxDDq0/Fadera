@@ -1,4 +1,5 @@
 // Robustezza verso dati di rete anomali o ostili (fase 3, tappa 1.3).
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
@@ -58,13 +59,56 @@ void main() {
       }
       expect(accepted, kMaxDynamicNodes);
     });
-    test('elenco degli avvisi limitato', () {
+    test('elenco degli avvisi limitato, conservando i più recenti', () {
       final s = MixerState();
       for (var i = 0; i < 2000; i++) {
         s.applyNodeLine('/ch/01/mix ON XX', ChangeOrigin.sync);
       }
       expect(s.warnings.length, lessThanOrEqualTo(kMaxWarnings));
+      s.applyNodeLine('/ch/32/mix ON XX', ChangeOrigin.sync);
+      expect(s.warnings.last, contains('/ch/32/mix'));
     });
+    test('riga troppo lunga su un nodo della tabella: rifiutata, valore invariato', () {
+      final s = MixerState();
+      final before = s.nodeLine('/ch/01/config');
+      expect(s.applyNodeLine('/ch/01/config "${'a' * 3000}" 1 RD 1', ChangeOrigin.sync), isFalse);
+      expect(s.nodeLine('/ch/01/config'), before);
+    });
+  });
+
+  test('meter: sotto la soglia minima la barra si svuota, sopra resta dove è', () {
+    // con la soglia senza effetto (prima) la barra restava a -95 invece di svuotarsi
+    final b = MeterBallistics(fallDbPerSecond: 200, floorDb: -90)
+      ..input(-80)
+      ..input(-95);
+    for (var i = 0; i < 10; i++) {
+      b.tick(16);
+    }
+    expect(b.level, -127);
+    final c = MeterBallistics(fallDbPerSecond: 200, floorDb: -90)
+      ..input(-80)
+      ..input(-85);
+    for (var i = 0; i < 10; i++) {
+      c.tick(16);
+    }
+    expect(c.level, -85);
+  });
+
+  test('ricerca: al massimo kMaxDiscoveredMixers risposte, testi ripuliti (127.0.0.1)', () async {
+    final t = await UdpTransport.bind(address: InternetAddress.loopbackIPv4, policy: TransportPolicy.loopbackOnly);
+    final fakes = [for (var i = 0; i < kMaxDiscoveredMixers + 8; i++) await RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 0)];
+    final pending = X32Client.discover(t, [InternetAddress.loopbackIPv4], window: const Duration(milliseconds: 600), port: 9);
+    final reply = encodeOsc(OscMessage('/xinfo', const [OscString('127.0.0.1'), OscString('Finto\n\u001b[31mmixer'), OscString('X32'), OscString('4.15')]));
+    for (final f in fakes) {
+      f.send(reply, InternetAddress.loopbackIPv4, t.localPort);
+    }
+    final found = await pending;
+    expect(found.length, kMaxDiscoveredMixers);
+    expect(found.every((m) => !m.name.contains('\n') && !m.name.contains('\u001b')), isTrue);
+    for (final f in fakes) {
+      f.close();
+    }
+    await t.close();
   });
 
   test('testi di /xinfo ripuliti (niente caratteri di controllo, lunghezza limitata)', () {

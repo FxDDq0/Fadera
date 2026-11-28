@@ -75,7 +75,12 @@ void main() {
     for (var i = 0; i < simPar.fields.length; i++) {
       if (simPar.fields[i].kind != ParamKind.opaque && simPar.fields[i].kind != ParamKind.string) sim.state.setIdx(simPar.leafPath(i), 1, origin: ChangeOrigin.remote);
     }
-    await Future<void>.delayed(const Duration(milliseconds: 500));
+    // attesa della risposta del simulatore senza tempi fissi
+    final end = DateTime.now().add(const Duration(seconds: 5));
+    while (ctl.state.nodeLine('/fx/1/par') != sim.state.nodeLine('/fx/1/par') && DateTime.now().isBefore(end)) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 200)); // aggiornamento dell'interfaccia (150 ms)
     expect(ctl.state.getIdx('/fx/1/type'), sim.state.getIdx('/fx/1/type'));
     // valori reali riletti dal mixer, non quelli predefiniti ricostruiti sul PC
     expect(ctl.state.nodeLine('/fx/1/par'), sim.state.nodeLine('/fx/1/par'));

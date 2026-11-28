@@ -37,6 +37,13 @@ void main() {
     expect(plan.phantomLines, 2);
   });
 
+  test('caricamento nell app: stesse regole dell invio (mai /-, mai righe enormi o sconosciute)', () {
+    expect(isSceneNodeLine('/-action/goscene 5', state), isFalse);
+    expect(isSceneNodeLine('/ch/01/config "${'a' * 3000}" 1 RD 1', state), isFalse);
+    expect(isSceneNodeLine('/qualcosa/di/strano 1', state), isFalse);
+    expect(isSceneNodeLine('/ch/01/config "Voce" 1 RD 1', state), isTrue);
+  });
+
   test('file troppo grande rifiutato prima della lettura', () {
     final dir = Directory.systemTemp.createTempSync('fadera_scn_');
     addTearDown(() => dir.deleteSync(recursive: true));
