@@ -92,6 +92,15 @@ class MeterHub {
     return t != null && DateTime.now().difference(t).inMilliseconds < 1000;
   }
 
+  /// Vero se è arrivato un banco qualsiasi nell'ultimo secondo (orologio dei meter).
+  bool get anyLive {
+    final now = DateTime.now();
+    for (final t in lastFrame.values) {
+      if (now.difference(t).inMilliseconds < 1000) return true;
+    }
+    return false;
+  }
+
   void clear() {
     stripDb.fillRange(0, 80, -127);
     gateGrDb.fillRange(0, 32, 0);
@@ -585,9 +594,11 @@ class AppController extends ChangeNotifier {
     select(s);
   }
 
+  static final _showfileLine = RegExp(r'^/-show/showfile/(scene|snippet|cue)/(\d{3})\s+"([^"]*)"');
+
   void _onNodeLine(String line) {
     // Formato verificato per le scene (T01b); per snippet e cue si legge solo il primo campo tra virgolette.
-    final m = RegExp(r'^/-show/showfile/(scene|snippet|cue)/(\d{3})\s+"([^"]*)"').firstMatch(line);
+    final m = _showfileLine.firstMatch(line);
     if (m == null) return;
     final names = datasetNames[m.group(1)]!;
     final i = int.parse(m.group(2)!);
@@ -598,8 +609,14 @@ class AppController extends ChangeNotifier {
     } else {
       names[i] = name;
     }
-    notifyListeners();
+    // l'elenco arriva a raffiche (fino a 700 righe dopo una sync): una sola notifica ogni 50 ms
+    _namesTimer ??= Timer(const Duration(milliseconds: 50), () {
+      _namesTimer = null;
+      notifyListeners();
+    });
   }
+
+  Timer? _namesTimer;
 
   // ------------------------------------------------------------ sync
 
@@ -718,6 +735,7 @@ class AppController extends ChangeNotifier {
     }
     _undoSub.cancel();
     _fxRefresh?.cancel();
+    _namesTimer?.cancel();
     hub.dispose();
     soloTick.dispose();
     panelTab.dispose();

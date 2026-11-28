@@ -87,7 +87,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final _clock = MeterClock();
+  // l'orologio dei meter si ferma quando dal mixer non arrivano più dati (niente ridisegni a vuoto)
+  late final _clock = MeterClock(isLive: () => widget.ctl.meters.anyLive);
   late final AppLifecycleListener _lifecycle;
 
   @override

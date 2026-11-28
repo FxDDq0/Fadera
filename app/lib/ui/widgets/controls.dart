@@ -297,13 +297,32 @@ class _ScalePainter extends CustomPainter {
 // =============================================================== METER
 
 /// Orologio di rendering dei meter: un tick per frame (vsync), separato dalla rete.
+/// Con [isLive] si ferma quando non arrivano dati dei meter da più di [idleAfter]
+/// (il tempo serve alle barre per scendere a zero) e riparte al primo dato.
 class MeterClock extends ChangeNotifier {
+  MeterClock({this.isLive, this.idleAfter = const Duration(seconds: 4)});
+  final bool Function()? isLive;
+  final Duration idleAfter;
   int lastMs = 0;
   int dtMs = 16;
+  int _lastLiveMs = 0;
+  bool _idle = false;
+
+  /// Vero quando l'orologio è fermo (nessun ridisegno dei meter).
+  bool get idle => _idle;
+
   void tick(Duration elapsed) {
     final ms = elapsed.inMilliseconds;
     dtMs = (ms - lastMs).clamp(0, 100);
     lastMs = ms;
+    final live = isLive?.call() ?? true;
+    if (live) {
+      _lastLiveMs = ms;
+      _idle = false;
+    } else if (ms - _lastLiveMs > idleAfter.inMilliseconds) {
+      _idle = true;
+      return;
+    }
     notifyListeners();
   }
 }
@@ -374,6 +393,26 @@ class _MeterPainter extends CustomPainter {
   _MeterPainter(this.s, MeterClock clock) : super(repaint: clock);
   final _LevelMeterState s;
 
+  // gradiente e pennelli riusati tra un frame e l'altro (prima creati a ogni disegno di ogni meter)
+  static Rect? _shaderRect;
+  static Shader? _shader;
+  static final _wellPaint = Paint()..color = AppColors.well;
+  static final _gapPaint = Paint()..color = AppColors.well.withValues(alpha: 0.85);
+  static final _tickPaint = Paint()..color = AppColors.textFaint.withValues(alpha: 0.6);
+
+  static Shader _shaderFor(Rect body) {
+    if (_shader == null || _shaderRect != body) {
+      _shaderRect = body;
+      _shader = LinearGradient(
+        begin: Alignment.bottomCenter,
+        end: Alignment.topCenter,
+        colors: const [AppColors.meterLow, AppColors.meterLow, AppColors.meterMid, AppColors.meterHigh],
+        stops: [0, frac(-12), frac(-4), 1],
+      ).createShader(body);
+    }
+    return _shader!;
+  }
+
   static double frac(double db) {
     const lo = -60.0, hi = 0.0;
     return ((db - lo) / (hi - lo)).clamp(0.0, 1.0);
@@ -384,10 +423,10 @@ class _MeterPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final body = Rect.fromLTWH(0, _clipH + 2, size.width, math.max(0, size.height - _clipH - 2));
-    canvas.drawRRect(RRect.fromRectAndRadius(body, const Radius.circular(2)), Paint()..color = AppColors.well);
+    canvas.drawRRect(RRect.fromRectAndRadius(body, const Radius.circular(2)), _wellPaint);
     final clip = RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, size.width, _clipH), const Radius.circular(1));
     if (!s.widget.available) {
-      canvas.drawRRect(clip, Paint()..color = AppColors.well);
+      canvas.drawRRect(clip, _wellPaint);
       return;
     }
     final b = s.b
@@ -396,25 +435,19 @@ class _MeterPainter extends CustomPainter {
     final f = frac(b.level);
     if (f > 0) {
       final rect = Rect.fromLTRB(body.left + 1, body.top + body.height * (1 - f), body.right - 1, body.bottom);
-      final shader = LinearGradient(
-        begin: Alignment.bottomCenter,
-        end: Alignment.topCenter,
-        colors: const [AppColors.meterLow, AppColors.meterLow, AppColors.meterMid, AppColors.meterHigh],
-        stops: [0, frac(-12), frac(-4), 1],
-      ).createShader(body);
-      canvas.drawRect(rect, Paint()..shader = shader);
-      // segmenti: righe scure ogni 3 px
-      final gap = Paint()..color = AppColors.well.withValues(alpha: 0.85);
+      canvas.drawRect(rect, Paint()..shader = _shaderFor(body));
+      // segmenti: righe scure ogni 3 px, in un unico tracciato (un solo comando di disegno)
+      final gaps = Path();
       for (var y = body.bottom - 3; y > rect.top; y -= 3) {
-        canvas.drawRect(Rect.fromLTWH(body.left, y, body.width, 1), gap);
+        gaps.addRect(Rect.fromLTWH(body.left, y, body.width, 1));
       }
+      canvas.drawPath(gaps, _gapPaint);
     }
     // tacche dBFS sul bordo destro
-    final tick = Paint()..color = AppColors.textFaint.withValues(alpha: 0.6);
     for (final db in const [0, -6, -12, -18, -30, -40]) {
       final y = body.top + body.height * (1 - frac(db.toDouble()));
       final major = db == 0 || db == -18;
-      canvas.drawRect(Rect.fromLTWH(body.right - (major ? 3 : 2), y, major ? 3 : 2, 1), tick);
+      canvas.drawRect(Rect.fromLTWH(body.right - (major ? 3 : 2), y, major ? 3 : 2, 1), _tickPaint);
     }
     final pf = frac(b.peak);
     if (MeterSettings.peakHoldMs != 0 && pf > 0.01) {
