@@ -33,7 +33,14 @@ Analisi fatta con gli agenti ECC: code-explorer, code-reviewer, security-reviewe
 
 ## Stato
 
-* 27/11/2026: fasi 1 (analisi) e 2 (piano) completate. Esecuzione (fase 3) in pausa su richiesta: si riparte dalla tappa 1.1.
+* 27/11/2026: fasi 1 (analisi) e 2 (piano) completate.
+* 28/11/2026: fasi 3 e 4 completate. Tutte le tappe sono state eseguite. A ogni blocco è seguita una revisione ECC, con correzioni, poi `/ecc:review-pr` sull'intero branch.
+  * Test: 98 app, 73 motore, 28 simulatore. Copertura 72 % (prima 62,5 %, misura senza i test del simulatore).
+  * Misure:
+    * costruzione dello stato del mixer 6,9 → 6,5 ms;
+    * contrasto del testo secondario da 3,0 a 5,7:1.
+  * Prove sulla build di rilascio senza mixer: ricerca canali (pulsante e Ctrl+F), esportazione e importazione delle impostazioni.
+  * Nulla è stato provato sul mixer reale.
 
 ## Tappe
 

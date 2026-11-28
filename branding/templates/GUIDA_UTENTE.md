@@ -41,8 +41,11 @@ L'indicatore diventa verde quando sei connesso e sincronizzato, arancione se con
 | Scene, snippet, cue | pagina Scene (tre schede): elenco, salva, richiama con conferma, rinomina, copia, elimina; esporta lo stato in un file; l'invio di un file manda tutte le righe; l'**ambito di richiamo** (invio parziale) è sperimentale e va attivato in ⚙ → Generale |
 | Link stereo | icona a catena sulle strip in coppia (si aggiorna con la sync) |
 | Diagnostica | ⚙ → Diagnostica: contatori e log |
+| Cercare un canale | **Ctrl+F** o la lente in alto: scrivi un nome ("Kick") o una sigla ("12", "bus 3", "dca 2") e premi Invio |
+| Avvisi | in basso compaiono i messaggi importanti (mixer che non risponde, invii non riusciti); in alto "N non inviate" conta le modifiche che non sono arrivate al mixer mentre non rispondeva: rifai la sync Mixer → PC |
+| Impostazioni su file | ⚙ → Generale → Impostazioni su file: **Esporta** salva aspetto, layout, scorciatoie e preferenze; **Importa…** le applica (anche su un altro PC, copiando il file nella cartella `impostazioni`) |
 
-Scorciatoie predefinite (modificabili in ⚙ → Tastiera): **1–7** layer · **F5–F9** Mixer, DCA, Effetti, Routing, Scene · **← →** strip precedente/successiva · **↑ ↓** fader della strip selezionata (Maiusc: passi da 10) · **M** mute · **S** solo · **Ctrl+Z** annulla l'ultima modifica fatta nell'app.
+Scorciatoie predefinite (modificabili in ⚙ → Tastiera): **Ctrl+F** cerca un canale · **1–7** layer · **F5–F9** Mixer, DCA, Effetti, Routing, Scene · **← →** strip precedente/successiva · **↑ ↓** fader della strip selezionata (Maiusc: passi da 10) · **M** mute · **S** solo · **Ctrl+Z** annulla l'ultima modifica fatta nell'app.
 
 Le manopole e i fader **non** reagiscono alla rotella del mouse, per evitare modifiche accidentali.
 
