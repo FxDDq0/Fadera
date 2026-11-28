@@ -282,8 +282,8 @@ class _ConnectionChip extends StatelessWidget {
     final info = ctl.mixer;
     final (Color dot, String text) = switch (link) {
       LinkState.connected => (ctl.synced ? AppColors.ok : AppColors.warn, info?.name ?? ''),
-      LinkState.syncing => (AppColors.warn, 'Sincronizzazione…'),
-      LinkState.connecting => (AppColors.warn, 'Connessione…'),
+      LinkState.syncing => (AppColors.warn, tr('Sincronizzazione…')),
+      LinkState.connecting => (AppColors.warn, tr('Connessione…')),
       LinkState.lost => (AppColors.error, tr('Mixer non raggiungibile')),
       LinkState.disconnected => (AppColors.textFaint, tr('Non connesso')),
     };
@@ -317,6 +317,27 @@ class _ConnectionChip extends StatelessWidget {
                 const SizedBox(width: 6),
               ],
               Text(showIp ? '$text · ${info.ip}' : text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+              // modifiche che non sono arrivate al mixer mentre non rispondeva
+              ValueListenableBuilder<int>(
+                valueListenable: ctl.unsentEdits,
+                builder: (context, n, _) => n == 0
+                    ? const SizedBox.shrink()
+                    : Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Tooltip(
+                          message: tr('Modifiche fatte mentre il mixer non rispondeva: non sono arrivate al mixer. Rifai la sincronizzazione Mixer → PC; clic per nascondere.'),
+                          child: InkWell(
+                            key: const ValueKey('unsent-chip'),
+                            onTap: ctl.acknowledgeUnsent,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: AppColors.warn.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4), border: Border.all(color: AppColors.warn)),
+                              child: Text(tr('{p0} non inviate', {'p0': n}), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.warn)),
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
             ]),
           ),
         ),

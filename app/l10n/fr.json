@@ -730,5 +730,12 @@
  "Cerca un canale": "Chercher une voie",
  "Nome o numero: Kick, 12, bus 3, dca 2": "Nom ou numéro : Kick, 12, bus 3, dca 2",
  "Scrivi per cercare tra canali, bus, matrici e DCA.": "Tape pour chercher parmi voies, bus, matrices et DCA.",
- "Nessun canale trovato.": "Aucune voie trouvée."
+ "Nessun canale trovato.": "Aucune voie trouvée.",
+ "Il mixer non risponde: le modifiche fatte da ora non arrivano al mixer. Riconnessione automatica in corso.": "La console ne répond pas : les modifications faites à partir de maintenant ne lui parviennent pas. Reconnexion automatique en cours.",
+ "Il mixer risponde di nuovo. {p0} modifiche fatte nel frattempo non sono arrivate: rifai la sincronizzazione Mixer → PC.": "La console répond de nouveau. {p0} modifications faites entre-temps ne lui sont pas parvenues : refais la synchronisation Console → PC.",
+ "Il mixer risponde di nuovo. Per sicurezza rifai la sincronizzazione Mixer → PC.": "La console répond de nouveau. Par sécurité, refais la synchronisation Console → PC.",
+ "Sincronizzazione…": "Synchronisation…",
+ "Connessione…": "Connexion…",
+ "Modifiche fatte mentre il mixer non rispondeva: non sono arrivate al mixer. Rifai la sincronizzazione Mixer → PC; clic per nascondere.": "Modifications faites pendant que la console ne répondait pas : elles ne lui sont pas parvenues. Refais la synchronisation Console → PC ; clic pour masquer.",
+ "{p0} non inviate": "{p0} non envoyées"
 }

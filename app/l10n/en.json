@@ -730,5 +730,12 @@
  "Cerca un canale": "Find a channel",
  "Nome o numero: Kick, 12, bus 3, dca 2": "Name or number: Kick, 12, bus 3, dca 2",
  "Scrivi per cercare tra canali, bus, matrici e DCA.": "Type to search channels, buses, matrices and DCAs.",
- "Nessun canale trovato.": "No channel found."
+ "Nessun canale trovato.": "No channel found.",
+ "Il mixer non risponde: le modifiche fatte da ora non arrivano al mixer. Riconnessione automatica in corso.": "The mixer is not responding: changes made from now on do not reach it. Reconnecting automatically.",
+ "Il mixer risponde di nuovo. {p0} modifiche fatte nel frattempo non sono arrivate: rifai la sincronizzazione Mixer → PC.": "The mixer is responding again. {p0} changes made meanwhile did not reach it: run the Mixer → PC sync again.",
+ "Il mixer risponde di nuovo. Per sicurezza rifai la sincronizzazione Mixer → PC.": "The mixer is responding again. To be safe, run the Mixer → PC sync again.",
+ "Sincronizzazione…": "Syncing…",
+ "Connessione…": "Connecting…",
+ "Modifiche fatte mentre il mixer non rispondeva: non sono arrivate al mixer. Rifai la sincronizzazione Mixer → PC; clic per nascondere.": "Changes made while the mixer was not responding: they did not reach it. Run the Mixer → PC sync again; click to hide.",
+ "{p0} non inviate": "{p0} not sent"
 }

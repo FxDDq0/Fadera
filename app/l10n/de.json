@@ -730,5 +730,12 @@
  "Cerca un canale": "Kanal suchen",
  "Nome o numero: Kick, 12, bus 3, dca 2": "Name oder Nummer: Kick, 12, bus 3, dca 2",
  "Scrivi per cercare tra canali, bus, matrici e DCA.": "Tippe, um Kanäle, Busse, Matrizen und DCAs zu durchsuchen.",
- "Nessun canale trovato.": "Kein Kanal gefunden."
+ "Nessun canale trovato.": "Kein Kanal gefunden.",
+ "Il mixer non risponde: le modifiche fatte da ora non arrivano al mixer. Riconnessione automatica in corso.": "Das Mischpult antwortet nicht: Änderungen ab jetzt kommen dort nicht an. Automatische Wiederverbindung läuft.",
+ "Il mixer risponde di nuovo. {p0} modifiche fatte nel frattempo non sono arrivate: rifai la sincronizzazione Mixer → PC.": "Das Mischpult antwortet wieder. {p0} zwischenzeitliche Änderungen sind nicht angekommen: führe die Synchronisation Mischpult → PC erneut aus.",
+ "Il mixer risponde di nuovo. Per sicurezza rifai la sincronizzazione Mixer → PC.": "Das Mischpult antwortet wieder. Zur Sicherheit die Synchronisation Mischpult → PC erneut ausführen.",
+ "Sincronizzazione…": "Synchronisierung…",
+ "Connessione…": "Verbindung…",
+ "Modifiche fatte mentre il mixer non rispondeva: non sono arrivate al mixer. Rifai la sincronizzazione Mixer → PC; clic per nascondere.": "Änderungen, während das Mischpult nicht antwortete: sie sind nicht angekommen. Synchronisation Mischpult → PC erneut ausführen; Klick zum Ausblenden.",
+ "{p0} non inviate": "{p0} nicht gesendet"
 }

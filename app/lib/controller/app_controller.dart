@@ -129,11 +129,13 @@ int pruneLogs(Directory d, {required DateTime now, Duration keep = const Duratio
 }
 
 class AppController extends ChangeNotifier {
-  AppController({Prefs? prefs}) : prefs = prefs ?? Prefs.load() {
+  /// [linkLostAfter]: dopo quanto silenzio il mixer è "non raggiungibile" (predefinito del client; più corto nei test).
+  AppController({Prefs? prefs, this.linkLostAfter}) : prefs = prefs ?? Prefs.load() {
     hub = ParamHub(state);
     _undoSub = state.changes.listen((c) {
       _recordUndo(c);
       _watchFxType(c);
+      _countUnsent(c);
     });
     _openLog();
     applyAppearance();
@@ -152,6 +154,21 @@ class AppController extends ChangeNotifier {
       if (copy != null) log('I', 'copia del file originale delle impostazioni: $copy');
     }
   }
+
+  final Duration? linkLostAfter;
+
+  /// Modifiche fatte nell'app mentre il mixer non rispondeva: non sono arrivate al mixer
+  /// (il client le scarta di proposito, per non applicarle in un momento imprevisto).
+  final unsentEdits = ValueNotifier<int>(0);
+
+  void _countUnsent(ParamChange c) {
+    if (c.origin == ChangeOrigin.local && _client != null && link == LinkState.lost) unsentEdits.value++;
+  }
+
+  /// L'utente ha preso visione delle modifiche non inviate.
+  void acknowledgeUnsent() => unsentEdits.value = 0;
+
+  LinkState _lastLink = LinkState.disconnected;
 
   static final _fxTypePath = RegExp(r'^/fx/([1-8])/type$');
   Timer? _fxRefresh;
@@ -614,12 +631,23 @@ class AppController extends ChangeNotifier {
       await t.close();
       throw ConnectException('connessione annullata');
     }
-    final c = X32Client(transport: t, state: state)..autoReconnect = prefs.autoReconnect;
+    final lost = linkLostAfter;
+    final c = (lost == null ? X32Client(transport: t, state: state) : X32Client(transport: t, state: state, lostAfter: lost))..autoReconnect = prefs.autoReconnect;
     _client = c;
     _linkSub = c.linkChanges.listen((s) {
       linkEvents.add((DateTime.now(), s));
       if (linkEvents.length > 200) linkEvents.removeAt(0);
       if (s == LinkState.lost) lostCount++;
+      // avvisi visibili: il mixer smette di rispondere, poi torna
+      if (s == LinkState.lost && _lastLink != LinkState.lost) {
+        notify(tr('Il mixer non risponde: le modifiche fatte da ora non arrivano al mixer. Riconnessione automatica in corso.'));
+      } else if (s == LinkState.connected && _lastLink == LinkState.lost) {
+        final n = unsentEdits.value;
+        notify(n > 0
+            ? tr('Il mixer risponde di nuovo. {p0} modifiche fatte nel frattempo non sono arrivate: rifai la sincronizzazione Mixer → PC.', {'p0': n})
+            : tr('Il mixer risponde di nuovo. Per sicurezza rifai la sincronizzazione Mixer → PC.'));
+      }
+      _lastLink = s;
       if (s == LinkState.lost) {
         meters.clear();
         // Durante la perdita le modifiche fatte sul mixer non arrivano e quelle locali non partono:
@@ -720,6 +748,8 @@ class AppController extends ChangeNotifier {
     if (c == null) return SyncResult(0, kSyncNodes.length, 0, Duration.zero, error: tr('mixer non connesso'));
     final r = await c.syncFromMixer(onProgress: progress, cancelled: cancelled);
     _undo.clear();
+    // dopo una sync completa lo stato del PC è di nuovo quello del mixer
+    if (r.ok) unsentEdits.value = 0;
     lastSync = r;
     lastSyncTime = DateTime.now();
     synced = r.ok;
@@ -837,6 +867,7 @@ class AppController extends ChangeNotifier {
     panelRequest.dispose();
     noticeTick.dispose();
     searchRequest.dispose();
+    unsentEdits.dispose();
     _epoch++;
     final log = _logFile;
     _logFile = null;
