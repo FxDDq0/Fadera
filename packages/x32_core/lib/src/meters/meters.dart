@@ -8,7 +8,7 @@ library;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-/// Numero di parole a 32 bit attese per banco (, doc 20 par. 2).
+/// Numero di parole a 32 bit attese per banco (doc 20 par. 2).
 const List<int> kMeterBankWords = [70, 96, 49, 22, 82, 27, 4, 16, 6, 32, 32, 5, 4, 48, 80, 50, 48];
 
 enum MeterValueType {
@@ -97,7 +97,8 @@ Uint8List encodeMeterBlob(int bank, List<double> values) {
 /// Posizioni nel banco 0 secondo la documentazione esterna [EXT] (P.-G. Maillot):
 /// 32 canali, 8 aux in, 8 FX return (4 coppie stereo), 16 bus, 6 matrici = 70.
 /// La somma coincide con il count verificato (70). Su X32P FW 4.15 (prova A4 del 2026-11-23)
-/// è verificata la posizione 0 = ch 1; le altre posizioni seguono [EXT].
+/// è verificata solo la posizione 0 = ch 1; le altre seguono [EXT], per questo la mappa nel suo
+/// insieme resta [verifiedOnHardware] = false.
 class MeterBank0Map {
   static const bool verifiedOnHardware = false;
   static int ch(int n) => n - 1;
@@ -157,7 +158,8 @@ class MeterBallistics {
     if (_level > _target) _level = math.max(_target, _level - fallDbPerSecond * dt);
     _peakAgeMs += dtMs;
     if (_peakAgeMs > peakHoldMs) _peak = math.max(_level, _peak - peakFallDbPerSecond * dt);
-    if (_level < floorDb) _level = math.max(_level, -127);
+    // sotto la soglia minima la barra si svuota invece di scendere lentamente fino a -127
+    if (_level < floorDb) _level = -127;
   }
 
   void resetClip() => _clip = false;

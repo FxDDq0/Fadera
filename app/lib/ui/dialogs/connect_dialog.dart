@@ -6,7 +6,6 @@ import 'package:x32_core/x32_core.dart';
 import '../../controller/app_controller.dart';
 import '../../theme.dart';
 import 'sync_dialog.dart';
-import 'welcome_dialog.dart' show startDemo;
 import '../../l10n/l10n.dart';
 
 /// Connessione: ricerca automatica (broadcast `/xinfo`) o indirizzo manuale.
@@ -118,7 +117,7 @@ class _ConnectDialogState extends State<ConnectDialog> {
             Expanded(
               child: TextField(
                 controller: _host,
-                decoration: InputDecoration(hintText: tr('es. 192.168.1.2  oppure  127.0.0.1 per il simulatore'), isDense: true, border: OutlineInputBorder()),
+                decoration: InputDecoration(hintText: tr('es. 192.168.1.2'), isDense: true, border: OutlineInputBorder()),
                 onSubmitted: _busy ? null : _connect,
               ),
             ),
@@ -129,25 +128,6 @@ class _ConnectDialogState extends State<ConnectDialog> {
             const SizedBox(height: 10),
             Text(_error!, key: const ValueKey('connect-error'), style: const TextStyle(color: AppColors.error)),
           ],
-          const Divider(height: 28),
-          Row(children: [
-            Expanded(
-              child: Text(tr('Nessun mixer a disposizione? Il simulatore integrato riproduce un X32 sul PC (dati dimostrativi).'),
-                  style: TextStyle(fontSize: 12, color: AppColors.textDim)),
-            ),
-            const SizedBox(width: 8),
-            OutlinedButton.icon(
-              key: const ValueKey('connect-sim'),
-              onPressed: _busy
-                  ? null
-                  : () async {
-                      Navigator.pop(context);
-                      await startDemo(context, widget.ctl);
-                    },
-              icon: const Icon(Icons.science_outlined, size: 18),
-              label: Text(tr('Prova senza mixer')),
-            ),
-          ]),
         ]),
       ),
       actions: [

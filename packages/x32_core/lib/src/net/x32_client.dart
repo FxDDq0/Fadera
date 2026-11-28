@@ -27,7 +27,19 @@ import 'transport.dart';
 
 const int kX32Port = 10023;
 
+/// Testo di `/xinfo` pronto da mostrare: senza caratteri di controllo e al massimo 64 caratteri
+/// (le risposte arrivano dalla rete e un dispositivo qualunque può fingersi un mixer).
+String cleanInfoText(String s) {
+  // controllo (Cc), formato invisibile (Cf: direzione del testo, larghezza zero) e separatori di riga
+  final t = s.replaceAll(RegExp(r'[\p{Cc}\p{Cf}\u2028\u2029]+', unicode: true), ' ').replaceAll(RegExp(r' {2,}'), ' ').trim();
+  final r = t.runes.toList();
+  return r.length > 64 ? String.fromCharCodes(r.take(64)) : t;
+}
+
 /// Identità di un mixer (risposta `/xinfo`, ordine dei campi verificato in T01b).
+/// Mixer mostrati al massimo nell'elenco della ricerca.
+const kMaxDiscoveredMixers = 32;
+
 class MixerInfo {
   const MixerInfo({required this.ip, required this.name, required this.model, required this.firmware, required this.address, this.port = kX32Port});
   final String ip;
@@ -62,6 +74,27 @@ class SyncResult {
   final bool cancelled;
   final String? error;
   bool get ok => completed == total && !cancelled && error == null;
+}
+
+/// Limita i messaggi ripetuti nel registro: [take] restituisce null se il messaggio va saltato,
+/// altrimenti quanti ne sono stati saltati dall'ultimo scritto.
+class LogThrottle {
+  LogThrottle(this.interval);
+  final Duration interval;
+  DateTime? _last;
+  int _skipped = 0;
+
+  int? take(DateTime now) {
+    final last = _last;
+    if (last != null && now.difference(last) < interval) {
+      _skipped++;
+      return null;
+    }
+    _last = now;
+    final n = _skipped;
+    _skipped = 0;
+    return n;
+  }
 }
 
 class LogEntry {
@@ -192,7 +225,8 @@ class X32Client {
       try {
         for (final m in decodeOsc(d.data)) {
           if (m.address == '/xinfo' && m.args.length == 4 && m.args.every((a) => a is OscString)) {
-            final a = m.args.cast<OscString>().map((s) => s.value).toList();
+            final a = m.args.cast<OscString>().map((s) => cleanInfoText(s.value)).toList();
+            if (found.length >= kMaxDiscoveredMixers) continue; // un dispositivo ostile non riempie l'elenco
             found.putIfAbsent('${d.address.address}:${d.port}',
                 () => MixerInfo(ip: a[0], name: a[1], model: a[2], firmware: a[3], address: d.address, port: d.port));
           }
@@ -249,10 +283,12 @@ class X32Client {
 
     final jobs = <Future<void>>[];
     final transports = <Transport>[];
+    var boundIfaces = 0;
     for (final li in ifaces) {
       try {
         final t = await UdpTransport.bind(address: li.address, broadcast: true);
         transports.add(t);
+        boundIfaces++;
         final p = li.address.address.split('.');
         jobs.add(scan(t, [InternetAddress('255.255.255.255'), InternetAddress('${p[0]}.${p[1]}.${p[2]}.255'), ...hosts]));
       } on Object catch (e) {
@@ -267,15 +303,23 @@ class X32Client {
     } on Object catch (e) {
       errors.add('loopback: $e');
     }
-    if (transports.length == 1) {
-      // nessuna scheda di rete utilizzabile: tentativo con un socket generico, come prima
-      final t = await UdpTransport.bind(broadcast: true);
-      transports.add(t);
-      jobs.add(scan(t, [...await broadcastTargets(), ...hosts]));
-    }
-    await Future.wait(jobs);
-    for (final t in transports) {
-      await t.close();
+    try {
+      if (boundIfaces == 0) {
+        // nessuna scheda di rete utilizzabile: tentativo con un socket generico, come prima
+        try {
+          final t = await UdpTransport.bind(broadcast: true);
+          transports.add(t);
+          jobs.add(scan(t, [...await broadcastTargets(), ...hosts]));
+        } on Object catch (e) {
+          errors.add('socket generico: $e');
+        }
+      }
+      await Future.wait(jobs);
+    } finally {
+      // i socket si chiudono sempre, anche se una ricerca fallisce
+      for (final t in transports) {
+        await t.close();
+      }
     }
     return DiscoveryReport(found.values.toList(), ifaces, errors);
   }
@@ -285,6 +329,7 @@ class X32Client {
   /// Si connette al mixer. Non simula mai il successo: senza una risposta
   /// `/status` reale entro i tentativi previsti lancia [ConnectException].
   Future<MixerInfo> connect(InternetAddress host, {int port = kX32Port, MixerInfo? known}) async {
+    if (_disposed) throw ConnectException('client già rilasciato');
     if (_link == LinkState.connected || _link == LinkState.syncing) await disconnect();
     _closing = false;
     _host = host;
@@ -299,6 +344,7 @@ class X32Client {
       } on TimeoutException {
         _log('W', 'nessuna risposta a /status da ${host.address} (tentativo ${i + 1}/$connectAttempts)');
       }
+      _abortIfClosed();
     }
     _statusWait = null;
     if (status == null) {
@@ -308,8 +354,16 @@ class X32Client {
     var info = known;
     if (info == null) {
       // Identità: /xinfo diretto (stesso formato della discovery).
-      info = await _queryInfo(host, port) ??
-          MixerInfo(ip: status.length > 1 ? status[1] : host.address, name: status.length > 2 ? status[2] : '?', model: '?', firmware: '?', address: host, port: port);
+      final queried = await _queryInfo(host, port);
+      _abortIfClosed();
+      info = queried ??
+          MixerInfo(
+              ip: cleanInfoText(status.length > 1 ? status[1] : host.address),
+              name: cleanInfoText(status.length > 2 ? status[2] : '?'),
+              model: '?',
+              firmware: '?',
+              address: host,
+              port: port);
     }
     _mixer = info;
     _lastRx = DateTime.now();
@@ -320,6 +374,15 @@ class X32Client {
   }
 
   Completer<MixerInfo?>? _infoWait;
+
+  /// Una disconnessione arrivata durante l'attesa annulla la connessione: niente sessione
+  /// (timer, iscrizioni) avviata su un client che nel frattempo è stato chiuso.
+  void _abortIfClosed() {
+    if (_closing || _disposed) {
+      _statusWait = null;
+      throw ConnectException('connessione annullata');
+    }
+  }
 
   Future<MixerInfo?> _queryInfo(InternetAddress host, int port) async {
     _infoWait = Completer<MixerInfo?>();
@@ -407,11 +470,23 @@ class X32Client {
     _keepAliveTimer = _meterTimer = _watchdog = null;
     queue.clear();
     _nodeWait?.completeError(ConnectException('disconnesso'));
+    // una connessione in attesa di risposta termina subito
+    if (_statusWait != null && !_statusWait!.isCompleted) _statusWait!.completeError(TimeoutException('disconnesso'));
+    if (_infoWait != null && !_infoWait!.isCompleted) _infoWait!.complete(null);
     _setLink(LinkState.disconnected);
     _mixer = null;
+    // nessun comando può più partire da questo client (solo una nuova connect lo riapre)
+    _host = null;
   }
 
+  /// Vero dopo [dispose]: il client non è più utilizzabile.
+  bool get disposed => _disposed;
+  bool _disposed = false;
+
+  /// Rilascia socket, timer e stream. Si può chiamare più volte.
   Future<void> dispose() async {
+    if (_disposed) return;
+    _disposed = true;
     await disconnect();
     await _rx.cancel();
     await _tx.cancel();
@@ -478,23 +553,25 @@ class X32Client {
   }
 
   /// Operazioni sui dataset del mixer (doc 15 par. 6.4, comandi verificati nel binario).
-  void datasetLoad(String type, int idx) => _send(OscMessage('/load', [OscString(type), OscInt(idx), const OscInt(0), const OscInt(0)]));
-  void datasetSave(String type, int idx, String name, String notes) =>
+  /// Ogni comando restituisce falso se non è partito (mixer non connesso o non raggiungibile).
+  bool datasetLoad(String type, int idx) => _send(OscMessage('/load', [OscString(type), OscInt(idx), const OscInt(0), const OscInt(0)]));
+  bool datasetSave(String type, int idx, String name, String notes) =>
       _send(OscMessage('/save', [OscString(type), OscInt(idx), OscString(name), OscString(notes), const OscInt(0)]));
-  void datasetCopy(String type, int src, int dst) => _send(OscMessage('/copy', [OscString(type), OscInt(src), OscInt(dst), const OscInt(0)]));
-  void datasetDelete(String type, int idx) => _send(OscMessage('/delete', [OscString(type), OscInt(idx)]));
-  void datasetRename(String type, int idx, String name, String notes) =>
+  bool datasetCopy(String type, int src, int dst) => _send(OscMessage('/copy', [OscString(type), OscInt(src), OscInt(dst), const OscInt(0)]));
+  bool datasetDelete(String type, int idx) => _send(OscMessage('/delete', [OscString(type), OscInt(idx)]));
+  bool datasetRename(String type, int idx, String name, String notes) =>
       _send(OscMessage('/rename', [OscString(type), OscInt(idx), OscString(name), OscString(notes)]));
   /// Nuovo cue in posizione [pos] (`/add ,sis "cue" pos ""`, doc 15 par. 6.4).
-  void cueAdd(int pos) => _send(OscMessage('/add', [const OscString('cue'), OscInt(pos), const OscString('')]));
-  void requestShowDump() => _send(OscMessage('/showdump'));
+  bool cueAdd(int pos) => _send(OscMessage('/add', [const OscString('cue'), OscInt(pos), const OscString('')]));
+  bool requestShowDump() => _send(OscMessage('/showdump'));
 
   /// Richiede un singolo nodo (`/node ,s`); la risposta aggiorna lo stato come sync.
-  void requestNode(String path) => _send(OscMessage('/node', [OscString(path.startsWith('/') ? path.substring(1) : path)]));
+  bool requestNode(String path) => _send(OscMessage('/node', [OscString(path.startsWith('/') ? path.substring(1) : path)]));
 
   /// Invia righe di nodo (file di scena/snippet) come `/ ,s` (doc 15 par. 6.3).
   /// Risposta del mixer non verificata su hardware: il chiamante chiede conferma e salva un backup.
   Future<int> sendNodeLines(Iterable<String> lines) async {
+    final droppedBefore = queue.dropped;
     var n = 0;
     for (final l in lines) {
       final t = l.trim();
@@ -503,7 +580,9 @@ class X32Client {
       if (++n % 32 == 0) await queue.drained(); // contropressione: nessuna coda che cresce
     }
     await queue.drained();
-    return n;
+    // le righe che la coda non è riuscita a codificare o inviare non contano come inviate
+    final lost = queue.dropped - droppedBefore;
+    return lost >= n ? 0 : n - lost;
   }
 
   /// Comando ordinato: mai fuso né scartato. Restituisce falso se non è stato accodato.
@@ -527,16 +606,22 @@ class X32Client {
 
   // ---------------------------------------------------------- ricezione
 
+  final _badDatagramLog = LogThrottle(const Duration(seconds: 1));
+
   void _onDatagram(UdpPacket d) {
-    if (_host == null || d.address.address != _host!.address) {
-      return; // solo il mixer connesso (la discovery usa un trasporto separato)
+    if (_host == null || d.address.address != _host!.address || d.port != _port) {
+      // solo il mixer connesso, dalla sua porta OSC (la discovery usa un trasporto separato):
+      // un altro programma sullo stesso IP o da un'altra porta non può cambiare lo stato
+      return;
     }
     List<OscMessage> msgs;
     try {
       msgs = decodeOsc(d.data);
     } on OscFormatException catch (e) {
       droppedCount++;
-      _log('W', 'datagramma scartato: ${e.message}');
+      // un flusso di pacchetti non validi non deve riempire il registro (al massimo un messaggio al secondo)
+      final skipped = _badDatagramLog.take(DateTime.now());
+      if (skipped != null) _log('W', 'datagramma scartato: ${e.message}${skipped > 0 ? ' (altri $skipped non mostrati)' : ''}');
       return;
     }
     _lastRx = DateTime.now();
@@ -564,7 +649,7 @@ class X32Client {
     }
     if (a == '/xinfo') {
       if (m.args.length == 4 && m.args.every((x) => x is OscString) && _infoWait != null) {
-        final v = m.args.cast<OscString>().map((s) => s.value).toList();
+        final v = m.args.cast<OscString>().map((s) => cleanInfoText(s.value)).toList();
         _infoWait!.complete(MixerInfo(ip: v[0], name: v[1], model: v[2], firmware: v[3], address: _host!, port: _port));
       }
       return;
@@ -636,7 +721,7 @@ class X32Client {
   /// Sync Mixer → PC: richiede i 2127 nodi uno alla volta (stop-and-wait) e li applica
   /// come aggiornamenti di sync (mai reinviati). Ritrasmette ogni [replyTimeout].
   Future<SyncResult> syncFromMixer({void Function(int done, int total)? onProgress, bool Function()? cancelled, bool showDump = true}) async {
-    if (!_isOnline) throw StateError('non connesso');
+    if (!_isOnline) return SyncResult(0, kSyncNodes.length, 0, Duration.zero, error: 'mixer non connesso');
     final sw = Stopwatch()..start();
     _setLink(LinkState.syncing);
     var retrans = 0;
@@ -689,27 +774,48 @@ class X32Client {
   /// coda ordinata con contropressione ogni [pacingEvery] righe, senza attendere conferme. Il chiamante
   /// deve aver ottenuto la conferma esplicita dell'utente e salvato un backup.
   Future<SyncResult> syncToMixer({void Function(int done, int total)? onProgress, bool Function()? cancelled, int pacingEvery = 32}) async {
-    if (!_isOnline) throw StateError('non connesso');
+    if (!_isOnline) return SyncResult(0, kSyncNodes.length, 0, Duration.zero, error: 'mixer non connesso');
     final sw = Stopwatch()..start();
     _setLink(LinkState.syncing);
+    final droppedBefore = queue.dropped;
     var done = 0;
+    var cancelledByUser = false;
+    String? error;
     try {
       for (final path in kSyncNodes) {
-        if (cancelled?.call() ?? false) return SyncResult(done, kSyncNodes.length, 0, sw.elapsed, cancelled: true);
+        if (cancelled?.call() ?? false) {
+          cancelledByUser = true;
+          break;
+        }
+        if (!_isOnline) {
+          error = 'connessione interrotta durante l\'invio';
+          break;
+        }
         final n = state.node(path);
         final line = n?.toLine();
         if (line != null && (!n!.spec.opaque || n.rawText != null) && line.length > path.length) {
-          if (!_send(OscMessage('/', [OscString(line.substring(1))]))) throw ConnectException('coda dei comandi piena');
+          if (!_send(OscMessage('/', [OscString(line.substring(1))]))) {
+            error = _isOnline ? 'coda dei comandi piena' : 'connessione interrotta durante l\'invio';
+            break;
+          }
         }
         done++;
         if (done % pacingEvery == 0) await queue.drained();
         onProgress?.call(done, kSyncNodes.length);
       }
+      // l'invio è finito solo quando la coda si è svuotata: i comandi scartati vanno dichiarati
+      if (_isOnline) await queue.drained();
+      // la coda svuotata da una perdita o da una disconnessione non conta come "inviato"
+      if (error == null && !cancelledByUser && !_isOnline) error = 'connessione interrotta durante l\'invio';
+      final lost = queue.dropped - droppedBefore;
+      if (error == null && lost > 0) error = '$lost comandi scartati dalla coda di invio';
     } finally {
       if (_link == LinkState.syncing) _setLink(LinkState.connected);
     }
-    _log('I', 'sync PC → Mixer: $done righe inviate in ${sw.elapsedMilliseconds} ms (risposta del mixer non verificata)');
-    return SyncResult(done, kSyncNodes.length, 0, sw.elapsed);
+    final r = SyncResult(done, kSyncNodes.length, 0, sw.elapsed, cancelled: cancelledByUser, error: error);
+    _log(r.ok ? 'I' : 'W',
+        'sync PC → Mixer: $done/${kSyncNodes.length} righe in ${sw.elapsedMilliseconds} ms${cancelledByUser ? ', interrotta' : ''}${error != null ? ', errore: $error' : ''} (risposta del mixer non verificata)');
+    return r;
   }
 
   // ------------------------------------------------------------- utilità

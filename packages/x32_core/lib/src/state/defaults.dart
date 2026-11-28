@@ -5,6 +5,17 @@
 /// formato osservato sul mixer reale in T01b (stessi campi, valori neutri).
 library;
 
+// Espressioni regolari compilate una volta sola (prima ricreate a ogni chiamata, migliaia all'avvio).
+final _re1 = RegExp(r'^/(ch|auxin|fxrtn|bus|mtx)/(\d\d)/(.+)$');
+final _re2 = RegExp(r'^/main/(st|m)/(.+)$');
+final _re3 = RegExp(r'^/dca/(\d)(/config)?$');
+final _re4 = RegExp(r'^/headamp/\d{3}$');
+final _re5 = RegExp(r'^/fx/(\d)(/source|/par)?$');
+final _re6 = RegExp(r'^/outputs/(main|aux|p16|aes|rec)/(\d\d)(/delay|/iQ)?$');
+final _re7 = RegExp(r'^/config/userrout/(in|out)$');
+final _re8 = RegExp(r'^eq/(\d)$');
+final _re9 = RegExp(r'^mix/(\d\d)$');
+
 String _two(int n) => n.toString().padLeft(2, '0');
 
 /// Testo dei valori (senza percorso) per un nodo della tabella di sync.
@@ -12,19 +23,19 @@ String defaultValuesFor(String path) {
   final p = path;
   RegExpMatch? m;
 
-  m = RegExp(r'^/(ch|auxin|fxrtn|bus|mtx)/(\d\d)/(.+)$').firstMatch(p);
+  m = _re1.firstMatch(p);
   if (m != null) {
     final kind = m.group(1)!;
     final n = int.parse(m.group(2)!);
     final rest = m.group(3)!;
     return _stripDefault(kind, n, rest) ?? '';
   }
-  m = RegExp(r'^/main/(st|m)/(.+)$').firstMatch(p);
+  m = _re2.firstMatch(p);
   if (m != null) return _stripDefault(m.group(1) == 'st' ? 'main/st' : 'main/m', 1, m.group(2)!) ?? '';
-  m = RegExp(r'^/dca/(\d)(/config)?$').firstMatch(p);
+  m = _re3.firstMatch(p);
   if (m != null) return m.group(2) == null ? 'ON   0.0' : '"DCA ${m.group(1)}" 70 WH';
-  if (RegExp(r'^/headamp/\d{3}$').hasMatch(p)) return '+0.0 OFF';
-  m = RegExp(r'^/fx/(\d)(/source|/par)?$').firstMatch(p);
+  if (_re4.hasMatch(p)) return '+0.0 OFF';
+  m = _re5.firstMatch(p);
   if (m != null) {
     final slot = int.parse(m.group(1)!);
     switch (m.group(2)) {
@@ -36,7 +47,7 @@ String defaultValuesFor(String path) {
         return ''; // generato dal tipo (MixerState.resetFxParams)
     }
   }
-  m = RegExp(r'^/outputs/(main|aux|p16|aes|rec)/(\d\d)(/delay|/iQ)?$').firstMatch(p);
+  m = _re6.firstMatch(p);
   if (m != null) {
     final g = m.group(1)!;
     final n = int.parse(m.group(2)!);
@@ -55,7 +66,7 @@ String defaultValuesFor(String path) {
         return '$n <-EQ';
     }
   }
-  if (RegExp(r'^/config/userrout/(in|out)$').hasMatch(p)) {
+  if (_re7.hasMatch(p)) {
     return List.filled(p.endsWith('/in') ? 32 : 48, '0').join(' ');
   }
   return _globalDefaults[p] ?? '';
@@ -103,13 +114,13 @@ String? _stripDefault(String kind, int n, String rest) {
     case 'automix':
       return 'OFF  +0.0';
   }
-  final eq = RegExp(r'^eq/(\d)$').firstMatch(rest);
+  final eq = _re8.firstMatch(rest);
   if (eq != null) {
     final b = int.parse(eq.group(1)!);
     if (busLike) return const ['LShv 79.6 +0.00 2.0', 'PEQ 159.6 +0.00 2.0', 'PEQ 496.6 +0.00 2.0', 'PEQ 1k97 +0.00 2.0', 'PEQ 5k01 +0.00 2.0', 'HShv 10k02 +0.00 2.0'][b - 1];
     return const ['PEQ 124.7 +0.00 2.0', 'PEQ 496.6 +0.00 2.0', 'PEQ 1k97 +0.00 2.0', 'HShv 10k02 +0.00 2.0'][b - 1];
   }
-  final send = RegExp(r'^mix/(\d\d)$').firstMatch(rest);
+  final send = _re9.firstMatch(rest);
   if (send != null) {
     final s = int.parse(send.group(1)!);
     if (s.isEven) return 'ON   -oo';

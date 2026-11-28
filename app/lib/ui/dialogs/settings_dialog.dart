@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../controller/app_controller.dart';
@@ -23,6 +25,35 @@ class SettingsDialog extends StatefulWidget {
 }
 
 class _SettingsDialogState extends State<SettingsDialog> {
+  /// Sceglie un file esportato dalla cartella `impostazioni` (anche copiato da un altro PC).
+  Future<void> _import(BuildContext context) async {
+    final ctl = widget.ctl;
+    final dir = appSubDir('impostazioni');
+    final files = dir.listSync().whereType<File>().where((f) => f.path.endsWith('.json')).toList()..sort((a, b) => b.path.compareTo(a.path));
+    final chosen = await showDialog<File>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(tr('Importa le impostazioni')),
+        content: SizedBox(
+          width: 460,
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(tr('File nella cartella {p0} (per portarle da un altro PC copia qui il file esportato):', {'p0': dir.path}), style: const TextStyle(fontSize: 12)),
+            const SizedBox(height: 8),
+            if (files.isEmpty) Text(tr('Nessun file di impostazioni.'), style: const TextStyle(color: AppColors.textDim)),
+            for (final f in files.take(20)) ListTile(dense: true, title: Text(f.uri.pathSegments.last), onTap: () => Navigator.pop(c, f)),
+          ]),
+        ),
+        actions: [
+          if (Platform.isWindows) TextButton(onPressed: () => Process.run('explorer', [dir.path]), child: Text(tr('Apri la cartella'))),
+          TextButton(onPressed: () => Navigator.pop(c), child: Text(tr('Annulla'))),
+        ],
+      ),
+    );
+    if (chosen == null || !context.mounted) return;
+    ctl.importSettings(chosen);
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final ctl = widget.ctl;
@@ -82,6 +113,16 @@ class _SettingsDialogState extends State<SettingsDialog> {
                     subtitle: Text(tr('Posizioni del banco 0 da documentazione esterna: 32 canali, 8 aux, 8 FX return, 16 bus, 6 matrici. '
                         'Il canale 1 è verificato sul mixer reale; le altre posizioni seguono lo stesso ordine. '
                         'Il meter del Main LR resta spento finché la sua posizione non è verificata.')),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.import_export),
+                    title: Text(tr('Impostazioni su file')),
+                    subtitle: Text(tr('Aspetto, colori, barra rapida, layer utente, scorciatoie e preferenze, per un altro PC o come copia. '
+                        'L’indirizzo del mixer resta quello di questo PC.')),
+                    trailing: Wrap(spacing: 8, children: [
+                      OutlinedButton(key: const ValueKey('settings-export'), onPressed: () => setState(() => ctl.exportSettings()), child: Text(tr('Esporta'))),
+                      OutlinedButton(key: const ValueKey('settings-import'), onPressed: () => _import(context), child: Text(tr('Importa…'))),
+                    ]),
                   ),
                   ListTile(title: Text(tr('Cartella dei dati')), subtitle: Text(appDataDir().path)),
                 ]),
@@ -162,9 +203,7 @@ class _ShortcutsTabState extends State<_ShortcutsTab> {
     );
     if (key == null) return;
     final p = widget.ctl.prefs;
-    // un tasto per una sola azione: chi lo usava torna al proprio predefinito
-    p.shortcuts.removeWhere((k, v) => v == key.keyId);
-    p.shortcuts[a.name] = key.keyId;
+    assignShortcut(p, a, key);
     p.save();
     setState(() {});
   }
@@ -183,7 +222,7 @@ class _ShortcutsTabState extends State<_ShortcutsTab> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(color: AppColors.surface3, borderRadius: BorderRadius.circular(4)),
-                  child: Text(keyFor(ctl, a).keyLabel, style: mono.copyWith(fontSize: 12)),
+                  child: Text(keyFor(ctl, a)?.keyLabel ?? '—', style: mono.copyWith(fontSize: 12)),
                 ),
                 const SizedBox(width: 8),
                 TextButton(onPressed: () => _capture(a), child: Text(tr('Cambia'))),

@@ -4,7 +4,7 @@ Controller professionale per mixer digitali. Versione 1.0.0.
 
 > Pensato per i mixer della famiglia Behringer X32 / Midas M32 (protocollo OSC); verificato solo su Behringer X32 Producer con firmware 4.15. Fadera è un progetto indipendente: non è affiliato, approvato o sostenuto da Behringer, Midas o Music Tribe. I nomi X32 e M32 e i rispettivi marchi appartengono ai loro proprietari.
 
-> Versione di sviluppo. Provata con il simulatore e con test automatici; **non ancora provata su un mixer reale**. Prima di usarla in uno spettacolo leggi "Limiti attuali".
+> Le funzioni non ancora provate su un mixer reale sono indicate in "Limiti attuali": leggili prima di usare Fadera in uno spettacolo.
 
 ## Avvio
 
@@ -18,10 +18,6 @@ Controller professionale per mixer digitali. Versione 1.0.0.
    * **PC → Mixer**: sostituisce i parametri del mixer con quelli dell'app. Chiede una seconda conferma e salva prima un backup.
 
 L'indicatore diventa verde quando sei connesso e sincronizzato, arancione se connesso ma non sincronizzato, rosso se il mixer non risponde (l'app riprova da sola).
-
-## Provare senza mixer
-
-Avvia `simulatore\x32_sim.exe`, poi in Fadera connettiti a `127.0.0.1`. La fascia viola "SESSIONE SIMULATA" ricorda che non c'è un mixer reale.
 
 ## Uso
 
@@ -45,8 +41,11 @@ Avvia `simulatore\x32_sim.exe`, poi in Fadera connettiti a `127.0.0.1`. La fasci
 | Scene, snippet, cue | pagina Scene (tre schede): elenco, salva, richiama con conferma, rinomina, copia, elimina; esporta lo stato in un file; l'invio di un file manda tutte le righe; l'**ambito di richiamo** (invio parziale) è sperimentale e va attivato in ⚙ → Generale |
 | Link stereo | icona a catena sulle strip in coppia (si aggiorna con la sync) |
 | Diagnostica | ⚙ → Diagnostica: contatori e log |
+| Cercare un canale | **Ctrl+F** o la lente in alto: scrivi un nome ("Kick") o una sigla ("12", "bus 3", "dca 2") e premi Invio |
+| Avvisi | in basso compaiono i messaggi importanti (mixer che non risponde, invii non riusciti); in alto "N non inviate" conta le modifiche che non sono arrivate al mixer mentre non rispondeva: rifai la sync Mixer → PC |
+| Impostazioni su file | ⚙ → Generale → Impostazioni su file: **Esporta** salva aspetto, layout, scorciatoie e preferenze; **Importa…** le applica (anche su un altro PC, copiando il file nella cartella `impostazioni`) |
 
-Scorciatoie predefinite (modificabili in ⚙ → Tastiera): **1–7** layer · **F5–F9** Mixer, DCA, Effetti, Routing, Scene · **← →** strip precedente/successiva · **↑ ↓** fader della strip selezionata (Maiusc: passi da 10) · **M** mute · **S** solo · **Ctrl+Z** annulla l'ultima modifica fatta nell'app.
+Scorciatoie predefinite (modificabili in ⚙ → Tastiera): **Ctrl+F** cerca un canale · **1–7** layer · **F5–F9** Mixer, DCA, Effetti, Routing, Scene · **← →** strip precedente/successiva · **↑ ↓** fader della strip selezionata (Maiusc: passi da 10) · **M** mute · **S** solo · **Ctrl+Z** annulla l'ultima modifica fatta nell'app.
 
 Le manopole e i fader **non** reagiscono alla rotella del mouse, per evitare modifiche accidentali.
 

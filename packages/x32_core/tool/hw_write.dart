@@ -85,8 +85,8 @@ Future<void> main(List<String> args) async {
         continue;
       }
       final ok = spec.kind == ParamKind.string
-          ? s.setString(p, v!)
-          : s.setIdx(p, v!.startsWith('@') ? int.parse(v.substring(1)) : (spec.parseText(v) ?? (throw FormatException('valore non valido per $p: $v'))));
+          ? s.setString(p, v)
+          : s.setIdx(p, v.startsWith('@') ? int.parse(v.substring(1)) : (spec.parseText(v) ?? (throw FormatException('valore non valido per $p: $v'))));
       stdout.writeln('scritto $p = $v (${ok ? 'inviato' : 'nessuna modifica'})');
     }
     await c.queue.drained();

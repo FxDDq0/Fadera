@@ -4,9 +4,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:x32_core/x32_core.dart';
-import 'package:x32_sim/x32_sim.dart';
 
 import '../design/tokens.dart';
 import '../ui/widgets/controls.dart' show MeterSettings;
@@ -94,6 +92,15 @@ class MeterHub {
     return t != null && DateTime.now().difference(t).inMilliseconds < 1000;
   }
 
+  /// Vero se è arrivato un banco qualsiasi nell'ultimo secondo (orologio dei meter).
+  bool get anyLive {
+    final now = DateTime.now();
+    for (final t in lastFrame.values) {
+      if (now.difference(t).inMilliseconds < 1000) return true;
+    }
+    return false;
+  }
+
   void clear() {
     stripDb.fillRange(0, 80, -127);
     gateGrDb.fillRange(0, 32, 0);
@@ -102,13 +109,130 @@ class MeterHub {
   }
 }
 
+/// Elimina i registri `x32remote_AAAA-MM-GG.log` più vecchi di [keep]. Restituisce quanti ne ha tolti.
+int pruneLogs(Directory d, {required DateTime now, Duration keep = const Duration(days: 30)}) {
+  var removed = 0;
+  final re = RegExp(r'^x32remote_(\d{4}-\d{2}-\d{2})\.log$');
+  try {
+    for (final f in d.listSync().whereType<File>()) {
+      final m = re.firstMatch(f.uri.pathSegments.last);
+      final day = m == null ? null : DateTime.tryParse(m.group(1)!);
+      if (day != null && now.difference(day) > keep) {
+        f.deleteSync();
+        removed++;
+      }
+    }
+  } on FileSystemException {
+    // pulizia facoltativa: un file bloccato resta lì
+  }
+  return removed;
+}
+
 class AppController extends ChangeNotifier {
-  AppController({Prefs? prefs}) : prefs = prefs ?? Prefs.load() {
+  /// [linkLostAfter]: dopo quanto silenzio il mixer è "non raggiungibile" (predefinito del client; più corto nei test).
+  AppController({Prefs? prefs, this.linkLostAfter}) : prefs = prefs ?? Prefs.load() {
     hub = ParamHub(state);
-    _undoSub = state.changes.listen(_recordUndo);
+    _undoSub = state.changes.listen((c) {
+      _recordUndo(c);
+      _watchFxType(c);
+      _countUnsent(c);
+    });
     _openLog();
     applyAppearance();
     L10n.apply(this.prefs.language);
+    this.prefs.onSaveError = (m) {
+      log('E', m);
+      notify(tr('Le impostazioni non sono state salvate: {p0}', {'p0': this.prefs.saveError ?? m}));
+    };
+    final problem = this.prefs.loadError;
+    if (problem != null) {
+      log('W', problem);
+      final copy = this.prefs.corruptCopyPath;
+      notify(this.prefs.loadUnreadable
+          ? tr('Il file delle impostazioni era illeggibile: sono stati usati i valori predefiniti.')
+          : tr('Alcune impostazioni non erano valide e sono tornate al valore predefinito: {p0}.', {'p0': this.prefs.loadBadFields.join(', ')}));
+      if (copy != null) log('I', 'copia del file originale delle impostazioni: $copy');
+    }
+  }
+
+  final Duration? linkLostAfter;
+
+  /// Modifiche fatte nell'app mentre il mixer non rispondeva: non sono arrivate al mixer
+  /// (il client le scarta di proposito, per non applicarle in un momento imprevisto).
+  final unsentEdits = ValueNotifier<int>(0);
+
+  void _countUnsent(ParamChange c) {
+    if (c.origin == ChangeOrigin.local && _client != null && link == LinkState.lost) unsentEdits.value++;
+  }
+
+  /// L'utente ha preso visione delle modifiche non inviate.
+  void acknowledgeUnsent() => unsentEdits.value = 0;
+
+  LinkState _lastLink = LinkState.disconnected;
+
+  static final _fxTypePath = RegExp(r'^/fx/([1-8])/type$');
+  Timer? _fxRefresh;
+
+  /// Tipo di effetto cambiato dal mixer o da un altro client: i parametri del nuovo effetto
+  /// vengono riletti dal mixer (stessa richiesta `/node` del cambio locale) e l'interfaccia aggiornata.
+  void _watchFxType(ParamChange c) {
+    if (c.origin != ChangeOrigin.remote) return;
+    final m = _fxTypePath.firstMatch(c.path);
+    if (m == null) return;
+    if (!(_client?.requestNode('/fx/${m.group(1)}/par') ?? false)) {
+      notify(tr("Parametri dell'effetto non riletti dal mixer: i valori mostrati sono quelli predefiniti."));
+    }
+    _fxRefresh?.cancel();
+    _fxRefresh = Timer(const Duration(milliseconds: 150), () {
+      if (!_disposed) hub.refreshAll();
+    });
+  }
+
+  /// Avvisi per l'utente, mostrati in basso dalla schermata principale (in ordine di arrivo).
+  final List<String> pendingNotices = [];
+  final ValueNotifier<int> noticeTick = ValueNotifier(0);
+
+  /// Risultato di una sync chiesta senza collegamento.
+  SyncResult _notConnected() => SyncResult(0, kSyncNodes.length, 0, Duration.zero, error: tr('mixer non connesso'));
+
+  void notify(String message) {
+    // al massimo 20 avvisi in attesa: una serie di cadute e riprese non riempie la memoria
+    if (pendingNotices.length >= 20) pendingNotices.removeAt(0);
+    pendingNotices.add(message);
+    noticeTick.value++;
+  }
+
+  /// Esporta le impostazioni in `%APPDATA%\Fadera\impostazioni`; restituisce il file o null (errore segnalato).
+  File? exportSettings() {
+    try {
+      final f = prefs.exportSettings(appSubDir('impostazioni'));
+      log('I', 'impostazioni esportate: ${f.path}');
+      notify(tr('Impostazioni esportate: {p0}', {'p0': f.path}));
+      return f;
+    } on Object catch (e) {
+      log('E', 'esportazione delle impostazioni non riuscita: $e');
+      notify(tr('Esportazione non riuscita: {p0}', {'p0': e}));
+      return null;
+    }
+  }
+
+  /// Importa le impostazioni da [f] e le applica subito (tema, colori, lingua, pagine).
+  bool importSettings(File f) {
+    final outcome = prefs.importSettings(f);
+    if (!outcome.applied) {
+      log('W', 'importazione di ${f.path}: ${outcome.name}');
+      notify(outcome == ImportOutcome.notSettings
+          ? tr('Impostazioni non importate: il file non è un file di impostazioni di Fadera.')
+          : tr('Impostazioni non importate: il file non è leggibile.'));
+      return false;
+    }
+    applyAppearance();
+    L10n.apply(prefs.language);
+    layer = _normalizeLayer(layer);
+    log('I', 'impostazioni importate da ${f.path}${outcome == ImportOutcome.partial ? ' (non validi: ${prefs.importBadFields.join(', ')})' : ''}');
+    notify(outcome == ImportOutcome.ok ? tr('Impostazioni importate.') : tr('Impostazioni importate; alcuni valori non validi sono rimasti quelli predefiniti.'));
+    notifyListeners();
+    return true;
   }
 
   /// Cambia la lingua dell'interfaccia ('system' = lingua di Windows) e la salva.
@@ -141,6 +265,15 @@ class AppController extends ChangeNotifier {
   late final StreamSubscription<ParamChange> _undoSub;
   bool _undoing = false;
   bool get canUndo => _undo.isNotEmpty;
+
+  /// Svuota la cronologia: dopo sync, richiami, ripristini e caricamenti i valori "precedenti"
+  /// non valgono più e Ctrl+Z li rimanderebbe al mixer.
+  void clearUndo() {
+    if (_undo.isEmpty) return;
+    _undo.clear();
+    notifyListeners();
+  }
+
 
   void _recordUndo(ParamChange c) {
     if (c.origin != ChangeOrigin.local || _undoing || c.previous == null) return;
@@ -378,6 +511,69 @@ class AppController extends ChangeNotifier {
     return (n == null || n.isEmpty) ? s.label : n;
   }
 
+  /// Tutte le strip del mixer, nell'ordine della superficie.
+  static final List<StripRef> allStrips = [
+    for (var i = 1; i <= 32; i++) StripRef(StripKind.ch, i),
+    for (var i = 1; i <= 8; i++) StripRef(StripKind.auxin, i),
+    for (var i = 1; i <= 8; i++) StripRef(StripKind.fxrtn, i),
+    for (var i = 1; i <= 16; i++) StripRef(StripKind.bus, i),
+    for (var i = 1; i <= 6; i++) StripRef(StripKind.mtx, i),
+    const StripRef(StripKind.mainSt, 1),
+    const StripRef(StripKind.mainM, 1),
+    for (var i = 1; i <= 8; i++) StripRef(StripKind.dca, i),
+  ];
+
+  static final _spaces = RegExp(r'\s+');
+  static final _leadingZeros = RegExp(r' 0+(\d)');
+
+  /// Ricerca rapida (Ctrl+F): per nome della strip, per sigla ("Ch 05", "bus 3", "dca 2")
+  /// o solo per numero (canali). Prima le corrispondenze esatte, poi quelle iniziali, poi le altre.
+  List<StripRef> searchStrips(String query, {int limit = 12}) {
+    final q = query.trim().toLowerCase().replaceAll(_spaces, ' ');
+    if (q.isEmpty) return const [];
+    final n = int.tryParse(q);
+    final ranked = <(int, StripRef)>[];
+    for (final s in allStrips) {
+      final name = stripName(s).toLowerCase();
+      final label = s.label.toLowerCase();
+      // sigla senza zeri iniziali e senza spazio: "ch 5", "ch5", "bus 3", "bus3"
+      final short = label.replaceAllMapped(_leadingZeros, (m) => ' ${m.group(1)}');
+      int? rank;
+      if (n != null && s.kind == StripKind.ch && s.number == n) {
+        rank = 0;
+      } else if (q == short || q == short.replaceAll(' ', '') || q == label) {
+        rank = 0;
+      } else if (name.startsWith(q)) {
+        rank = 1;
+      } else if (name.contains(q)) {
+        rank = 2;
+      } else if (short.startsWith(q) || label.startsWith(q)) {
+        rank = 3;
+      }
+      if (rank != null) ranked.add((rank, s));
+    }
+    ranked.sort((a, b) => a.$1.compareTo(b.$1));
+    return [for (final r in ranked.take(limit)) r.$2];
+  }
+
+  /// Apre la pagina del mixer che contiene [s] e la seleziona.
+  void goToStrip(StripRef s) {
+    final l = switch (s.kind) {
+      StripKind.ch => const [Layer.ch1, Layer.ch9, Layer.ch17, Layer.ch25][(s.number - 1) ~/ 8],
+      StripKind.auxin || StripKind.fxrtn => Layer.auxFx,
+      StripKind.bus => Layer.bus,
+      StripKind.mtx || StripKind.mainSt || StripKind.mainM => Layer.mtx,
+      StripKind.dca => Layer.dca,
+    };
+    layer = _normalizeLayer(l);
+    page = AppPage.mixer;
+    selected = s;
+    notifyListeners();
+  }
+
+  /// Richiesta di aprire la ricerca rapida (scorciatoia Ctrl+F o pulsante della barra).
+  final searchRequest = ValueNotifier<int>(0);
+
   void select(StripRef s) {
     if (s == selected) return;
     selected = s;
@@ -433,19 +629,67 @@ class AppController extends ChangeNotifier {
   }
 
   /// Si connette; il risultato è vero solo con una risposta reale del mixer.
-  Future<MixerInfo> connect(String host, {int port = kX32Port, bool keepSimulator = false}) async {
-    final sim = keepSimulator ? _builtinSim : null;
-    if (keepSimulator) _builtinSim = null; // non va fermato dalla disconnessione qui sotto
-    await disconnect();
-    _builtinSim = sim;
+  Future<MixerInfo> connect(String host, {int port = kX32Port}) async {
+    // connessioni serializzate: un doppio clic o una riconnessione non lasciano client orfani
+    // l'epoca si legge subito: una disconnessione chiesta da qui in poi annulla questa connessione
+    final epoch = _epoch;
+    final previous = _connecting;
+    final mine = Completer<void>();
+    _connecting = mine.future;
+    try {
+      await previous;
+      return await _connectNow(host, port, epoch);
+    } finally {
+      mine.complete();
+    }
+  }
+
+  Future<void>? _connecting;
+
+  /// Cambia a ogni disconnessione richiesta dall'utente e a dispose: una connessione partita
+  /// prima la riconosce e si annulla, invece di collegarsi comunque.
+  int _epoch = 0;
+
+  void _checkEpoch(int epoch, [X32Client? created]) {
+    if (epoch != _epoch || _disposed) {
+      created?.dispose();
+      throw ConnectException('connessione annullata');
+    }
+  }
+
+  Future<MixerInfo> _connectNow(String host, int port, int epoch) async {
+    _checkEpoch(epoch);
+    clearUndo();
+    // stato della connessione precedente: niente "il mixer risponde di nuovo" né conteggi
+    // di modifiche non inviate riferiti a un altro collegamento
+    _lastLink = LinkState.disconnected;
+    unsentEdits.value = 0;
+    await _disconnectNow();
+    _checkEpoch(epoch);
     final addr = (await InternetAddress.lookup(host)).firstWhere((a) => a.type == InternetAddressType.IPv4);
+    _checkEpoch(epoch);
     final t = await UdpTransport.bind();
-    final c = X32Client(transport: t, state: state)..autoReconnect = prefs.autoReconnect;
+    if (epoch != _epoch || _disposed) {
+      await t.close();
+      throw ConnectException('connessione annullata');
+    }
+    final lost = linkLostAfter;
+    final c = (lost == null ? X32Client(transport: t, state: state) : X32Client(transport: t, state: state, lostAfter: lost))..autoReconnect = prefs.autoReconnect;
     _client = c;
     _linkSub = c.linkChanges.listen((s) {
       linkEvents.add((DateTime.now(), s));
       if (linkEvents.length > 200) linkEvents.removeAt(0);
       if (s == LinkState.lost) lostCount++;
+      // avvisi visibili: il mixer smette di rispondere, poi torna
+      if (s == LinkState.lost && _lastLink != LinkState.lost) {
+        notify(tr('Il mixer non risponde: le modifiche fatte da ora non arrivano al mixer. Riconnessione automatica in corso.'));
+      } else if (s == LinkState.connected && _lastLink == LinkState.lost) {
+        final n = unsentEdits.value;
+        notify(n > 0
+            ? tr('Il mixer risponde di nuovo. {p0} modifiche fatte nel frattempo non sono arrivate: rifai la sincronizzazione Mixer → PC.', {'p0': n})
+            : tr('Il mixer risponde di nuovo. Per sicurezza rifai la sincronizzazione Mixer → PC.'));
+      }
+      _lastLink = s;
       if (s == LinkState.lost) {
         meters.clear();
         // Durante la perdita le modifiche fatte sul mixer non arrivano e quelle locali non partono:
@@ -461,6 +705,8 @@ class AppController extends ChangeNotifier {
     _nodeSub = c.nodeLines.listen(_onNodeLine);
     try {
       final info = await c.connect(addr, port: port);
+      _checkEpoch(epoch);
+      if (!identical(_client, c)) throw ConnectException('connessione annullata');
       prefs.lastHost = host;
       prefs.save();
       c.subscribeMeters(0);
@@ -469,48 +715,32 @@ class AppController extends ChangeNotifier {
       notifyListeners();
       return info;
     } on Object {
-      await disconnect();
+      if (identical(_client, c)) {
+        await _disconnectNow();
+      } else {
+        await c.dispose();
+      }
       rethrow;
     }
   }
 
-  /// Simulatore integrato (prova senza mixer): gira dentro l'app, solo su 127.0.0.1.
-  X32Simulator? _builtinSim;
-  bool get usingBuiltinSimulator => _builtinSim != null;
-
-  /// Avvia il simulatore integrato con la scena dimostrativa e vi si collega (solo lettura: sync Mixer → PC
-  /// la fa la finestra di sincronizzazione come per un mixer vero).
-  Future<MixerInfo> connectBuiltinSimulator() async {
-    await disconnect();
-    final lines = const LineSplitter().convert(await rootBundle.loadString('assets/demo/demo_scene.txt'));
-    _builtinSim = await X32Simulator.start(port: 0, initLines: lines);
-    log('I', 'simulatore integrato avviato su 127.0.0.1:${_builtinSim!.port}');
-    return connect('127.0.0.1', port: _builtinSim!.port, keepSimulator: true);
+  /// Disconnessione richiesta dall'esterno: annulla anche una connessione ancora in corso.
+  Future<void> disconnect() async {
+    _epoch++;
+    await _disconnectNow();
   }
 
-  Future<void> disconnect() async {
+  Future<void> _disconnectNow() async {
     final c = _client;
     _client = null;
     for (final s in [_linkSub, _meterSub, _logSub, _soloSub, _selSub, _nodeSub]) {
       await s?.cancel();
     }
-    if (c != null) {
-      await c.disconnect();
-      await c.transport.close();
-    }
-    await _stopBuiltinSimulator();
+    // dispose chiude anche il trasporto e gli stream del client (prima restavano aperti a ogni riconnessione)
+    await c?.dispose();
     meters.clear();
     synced = false;
     notifyListeners();
-  }
-
-  Future<void> _stopBuiltinSimulator() async {
-    final s = _builtinSim;
-    _builtinSim = null;
-    if (s != null) {
-      await s.close();
-      log('I', 'simulatore integrato fermato');
-    }
   }
 
   void _onMixerSelection(int idx) {
@@ -529,9 +759,11 @@ class AppController extends ChangeNotifier {
     select(s);
   }
 
+  static final _showfileLine = RegExp(r'^/-show/showfile/(scene|snippet|cue)/(\d{3})\s+"([^"]*)"');
+
   void _onNodeLine(String line) {
     // Formato verificato per le scene (T01b); per snippet e cue si legge solo il primo campo tra virgolette.
-    final m = RegExp(r'^/-show/showfile/(scene|snippet|cue)/(\d{3})\s+"([^"]*)"').firstMatch(line);
+    final m = _showfileLine.firstMatch(line);
     if (m == null) return;
     final names = datasetNames[m.group(1)]!;
     final i = int.parse(m.group(2)!);
@@ -542,13 +774,24 @@ class AppController extends ChangeNotifier {
     } else {
       names[i] = name;
     }
-    notifyListeners();
+    // l'elenco arriva a raffiche (fino a 700 righe dopo una sync): una sola notifica ogni 50 ms
+    _namesTimer ??= Timer(const Duration(milliseconds: 50), () {
+      _namesTimer = null;
+      notifyListeners();
+    });
   }
+
+  Timer? _namesTimer;
 
   // ------------------------------------------------------------ sync
 
   Future<SyncResult> syncFromMixer(void Function(int, int) progress, bool Function() cancelled) async {
-    final r = await _client!.syncFromMixer(onProgress: progress, cancelled: cancelled);
+    final c = _client;
+    if (c == null) return _notConnected();
+    final r = await c.syncFromMixer(onProgress: progress, cancelled: cancelled);
+    clearUndo();
+    // dopo una sync completa lo stato del PC è di nuovo quello del mixer
+    if (r.ok) unsentEdits.value = 0;
     lastSync = r;
     lastSyncTime = DateTime.now();
     synced = r.ok;
@@ -575,17 +818,40 @@ class AppController extends ChangeNotifier {
   }
 
   Future<SyncResult> syncToMixer(void Function(int, int) progress, bool Function() cancelled) async {
-    final r = await _client!.syncToMixer(onProgress: progress, cancelled: cancelled);
+    final c = _client;
+    if (c == null) return _notConnected();
+    final r = await c.syncToMixer(onProgress: progress, cancelled: cancelled);
+    // dopo un invio parziale lo stato del mixer non coincide più con quello del PC
+    synced = r.ok;
     notifyListeners();
     return r;
   }
 
   /// Ripristina un backup nello stato locale (senza inviare nulla).
-  void restoreBackup(File f) {
-    final j = jsonDecode(f.readAsStringSync()) as Map<String, dynamic>;
-    state.restoreValues((j['values'] as Map<String, dynamic>).cast<String, Object?>(), ChangeOrigin.load);
+  /// Restituisce null se riuscito, altrimenti il motivo (il file viene controllato prima di toccare lo stato).
+  String? restoreBackup(File f) {
+    final Map<String, Object?> values;
+    try {
+      final j = jsonDecode(f.readAsStringSync()) as Map<String, dynamic>;
+      values = (j['values'] as Map<String, dynamic>).cast<String, Object?>();
+    } on Object catch (e) {
+      log('E', 'backup ${f.path} non valido: $e');
+      return tr('file di backup non valido');
+    }
+    try {
+      state.restoreValues(values, ChangeOrigin.load);
+    } on Object catch (e) {
+      // valori di tipo sbagliato: lo stato può essere stato ripristinato solo in parte
+      log('E', 'ripristino di ${f.path} interrotto: $e');
+      synced = false;
+      hub.refreshAll();
+      notifyListeners();
+      return tr('backup non valido: lo stato è stato ripristinato solo in parte');
+    }
+    _undo.clear();
     hub.refreshAll();
     notifyListeners();
+    return null;
   }
 
   // ------------------------------------------------------------- log
@@ -593,27 +859,83 @@ class AppController extends ChangeNotifier {
   void _openLog() {
     try {
       final d = appSubDir('logs');
+      pruneLogs(d, now: DateTime.now());
       final day = DateTime.now().toIso8601String().substring(0, 10);
-      _logFile = File('${d.path}${Platform.pathSeparator}x32remote_$day.log').openWrite(mode: FileMode.append);
+      final file = File('${d.path}${Platform.pathSeparator}x32remote_$day.log');
+      _logBytes = file.existsSync() ? file.lengthSync() : 0;
+      _logFile = file.openWrite(mode: FileMode.append);
     } on Object {
       _logFile = null;
     }
   }
 
+  /// Il file del giorno non supera questa dimensione: oltre si scrive un'ultima riga e ci si ferma.
+  static const maxLogFileBytes = 5 * 1024 * 1024;
+  int _logBytes = 0;
+
   void _addLog(LogEntry e) {
     logs.add(e);
     if (logs.length > 2000) logs.removeRange(0, 500);
-    _logFile?.writeln(e.toString());
+    final f = _logFile;
+    if (f == null) return;
+    final line = e.toString();
+    _logBytes += utf8.encode(line).length + 2;
+    if (_logBytes > maxLogFileBytes) {
+      f.writeln('${DateTime.now().toIso8601String()} [W] registro del giorno oltre ${maxLogFileBytes ~/ (1024 * 1024)} MB: scrittura su disco sospesa (resta in Diagnostica)');
+      _logFile = null;
+      f.close();
+      return;
+    }
+    f.writeln(line);
   }
 
   void log(String level, String msg) => _addLog(LogEntry(level, msg));
 
+  bool _disposed = false;
+
+  @override
+  void notifyListeners() {
+    // operazioni asincrone che finiscono dopo dispose non devono più notificare
+    if (!_disposed) super.notifyListeners();
+  }
+
   @override
   void dispose() {
-    disconnect();
+    if (_disposed) return;
+    prefs.saveNow();
+    _disposed = true;
+    final c = _client;
+    _client = null;
+    for (final s in [_linkSub, _meterSub, _logSub, _soloSub, _selSub, _nodeSub]) {
+      s?.cancel();
+    }
     _undoSub.cancel();
+    _fxRefresh?.cancel();
+    _namesTimer?.cancel();
     hub.dispose();
-    _logFile?.close();
+    soloTick.dispose();
+    panelTab.dispose();
+    panelRequest.dispose();
+    noticeTick.dispose();
+    searchRequest.dispose();
+    unsentEdits.dispose();
+    _epoch++;
+    final log = _logFile;
+    _logFile = null;
+    () async {
+      try {
+        await c?.dispose();
+      } on Object catch (e) {
+        // il registro si sta chiudendo: resta solo la console di debug
+        debugPrint('Fadera: chiusura del collegamento non riuscita: $e');
+      } finally {
+        try {
+          await log?.close();
+        } on Object catch (e) {
+          debugPrint('Fadera: chiusura del registro non riuscita: $e');
+        }
+      }
+    }();
     super.dispose();
   }
 }

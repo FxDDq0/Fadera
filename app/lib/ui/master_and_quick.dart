@@ -276,6 +276,34 @@ class _AddTile extends StatelessWidget {
       );
 }
 
+/// Motivo per cui un nome di layout non va bene (null se va bene).
+String? layoutNameProblem(Prefs p, String name) {
+  final n = name.trim();
+  if (n.isEmpty) return tr('Scrivi un nome.');
+  if (n == '+' || n == '-') return tr('Nome riservato: scegline un altro.');
+  if (p.quickLayouts.containsKey(n)) return tr('Esiste già un layout con questo nome.');
+  return null;
+}
+
+/// Somma i piccoli spostamenti del trascinamento: con pochi passi (enumerazioni) un pixel
+/// alla volta non bastava mai a cambiare valore.
+class QuickDragAccumulator {
+  double _rest = 0;
+  ParamSpec? _spec;
+  void reset() => _rest = 0;
+  int update(ParamSpec spec, int idx, double dx) {
+    // un altro parametro (layout cambiato o importato): il resto accumulato non vale più
+    if (!identical(spec, _spec)) {
+      _rest = 0;
+      _spec = spec;
+    }
+    final wanted = (spec.fraction(idx) + _rest + dx / 300).clamp(0.0, 1.0);
+    final next = spec.idxFromFraction(wanted);
+    _rest = wanted - spec.fraction(next);
+    return next;
+  }
+}
+
 class _QuickTile extends StatelessWidget {
   const _QuickTile({required this.ctl, required this.q, required this.onEdit, required this.onRemove, this.large = false});
   final AppController ctl;
@@ -283,6 +311,10 @@ class _QuickTile extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onRemove;
   final bool large;
+
+  /// Un accumulatore per controllo, che sopravvive alle ricostruzioni durante il trascinamento.
+  static final _drags = Expando<QuickDragAccumulator>();
+  QuickDragAccumulator get _drag => _drags[q] ??= QuickDragAccumulator();
 
   @override
   Widget build(BuildContext context) {
@@ -313,7 +345,8 @@ class _QuickTile extends StatelessWidget {
                   onSecondaryTap: onEdit,
                   onLongPress: onEdit,
                   onTap: isSwitch ? () => ctl.toggle(q.path) : null,
-                  onHorizontalDragUpdate: isSwitch ? null : (d) => ctl.setIdx(q.path, spec.idxFromFraction((spec.fraction(idx) + d.delta.dx / 300).clamp(0.0, 1.0))),
+                  onHorizontalDragStart: isSwitch ? null : (_) => _drag.reset(),
+                  onHorizontalDragUpdate: isSwitch ? null : (d) => ctl.setIdx(q.path, _drag.update(spec, ctl.state.getIdx(q.path) ?? idx, d.delta.dx)),
                   child: Stack(children: [
                     if (!isSwitch)
                       Positioned.fill(
@@ -366,9 +399,14 @@ class _LayoutMenu extends StatelessWidget {
       onSelected: (v) async {
         if (v == '+') {
           final name = await _askName(context);
-          if (name != null && name.isNotEmpty) {
-            p.quickLayouts[name] = [];
-            p.activeQuickLayout = name;
+          if (name != null) {
+            final problem = layoutNameProblem(p, name);
+            if (problem != null) {
+              ctl.notify(problem);
+            } else {
+              p.quickLayouts[name.trim()] = [];
+              p.activeQuickLayout = name.trim();
+            }
           }
         } else if (v == '-') {
           if (p.quickLayouts.length > 1) {

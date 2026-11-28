@@ -33,7 +33,14 @@ class ChannelStrip extends StatelessWidget {
         final inverted = AppColors.stripInverted(colorIdx);
         final narrow = width < 70;
         final wide = width >= 100;
-        return GestureDetector(
+        // screen reader: la strip si annuncia con nome e sigla, e se è selezionata
+        return Semantics(
+          container: true,
+          button: true,
+          selected: ctl.selected == s,
+          label: '${ctl.stripName(s)}, ${s.label}',
+          onTap: () => ctl.select(s),
+          child: GestureDetector(
           onTap: () {
             ctl.select(s);
             if (ctl.assignMode) addQuickControl(context, ctl);
@@ -94,6 +101,7 @@ class ChannelStrip extends StatelessWidget {
                 ),
               ),
             ]),
+          ),
           ),
         );
       },
@@ -228,39 +236,72 @@ class _SignalLed extends StatefulWidget {
 class _SignalLedState extends State<_SignalLed> {
   MeterBallistics _b = MeterSettings.ballistics();
 
+  // ultimo stato mostrato: il widget si ricostruisce solo quando cambia (prima a ogni frame)
+  bool _on = false;
+  String _text = '';
+  Color _textColor = AppColors.textDim;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.clock.addListener(_onTick);
+  }
+
+  @override
+  void didUpdateWidget(_SignalLed old) {
+    super.didUpdateWidget(old);
+    if (!identical(old.clock, widget.clock)) {
+      old.clock.removeListener(_onTick);
+      widget.clock.addListener(_onTick);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.clock.removeListener(_onTick);
+    super.dispose();
+  }
+
+  void _onTick() {
+    final gi = widget.strip.globalIndex;
+    final db = gi < 70 ? widget.ctl.meters.stripDb[gi] : -127.0;
+    if (MeterSettings.peakReadout && gi < 70) {
+      _b
+        ..input(db)
+        ..tick(widget.clock.dtMs);
+      final p = _b.peak;
+      final text = p <= -90 ? '−∞' : p.toStringAsFixed(1);
+      final color = _b.clip ? AppColors.meterHigh : (p > -6 ? AppColors.meterMid : AppColors.textDim);
+      if (text != _text || color != _textColor) setState(() {
+        _text = text;
+        _textColor = color;
+      });
+      return;
+    }
+    final on = gi < 70 && db > -50;
+    if (on != _on) setState(() => _on = on);
+  }
+
   @override
   Widget build(BuildContext context) {
     final gi = widget.strip.globalIndex;
     return SizedBox(
       height: 16,
       child: Center(
-        child: ListenableBuilder(
-          listenable: widget.clock,
-          builder: (context, _) {
-            final db = gi < 70 ? widget.ctl.meters.stripDb[gi] : -127.0;
-            if (MeterSettings.peakReadout && gi < 70) {
-              _b
-                ..input(db)
-                ..tick(widget.clock.dtMs);
-              final p = _b.peak;
-              return GestureDetector(
-                onTap: () => _b = MeterSettings.ballistics(),
-                child: Text(p <= -90 ? '−∞' : p.toStringAsFixed(1),
-                    style: Tx.value.copyWith(fontSize: 10, color: _b.clip ? AppColors.meterHigh : (p > -6 ? AppColors.meterMid : AppColors.textDim))),
-              );
-            }
-            final on = gi < 70 && db > -50;
-            return Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: on ? AppColors.meterLow : AppColors.surface3,
-                shape: BoxShape.circle,
-                boxShadow: on ? Shadows.glow(AppColors.meterLow, 0.7) : null,
+        child: MeterSettings.peakReadout && gi < 70
+            ? GestureDetector(
+                onTap: () => setState(() => _b = MeterSettings.ballistics()),
+                child: Text(_text.isEmpty ? '−∞' : _text, style: Tx.value.copyWith(fontSize: 10, color: _textColor)),
+              )
+            : Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: _on ? AppColors.meterLow : AppColors.surface3,
+                  shape: BoxShape.circle,
+                  boxShadow: _on ? Shadows.glow(AppColors.meterLow, 0.7) : null,
+                ),
               ),
-            );
-          },
-        ),
       ),
     );
   }

@@ -14,5 +14,5 @@ Include the Fadera version, the steps to reproduce and the possible impact. You 
 
 * Fadera communicates only on the local network, with UDP port 10023 of the mixer. It does not contact any Internet service, collect telemetry or check for updates.
 * The OSC protocol of these mixers has no authentication or encryption: anyone on the same network can control the mixer. Keep the mixer on a trusted network.
-* The built-in simulator listens only on 127.0.0.1.
+* The program contains no simulator. The simulator in `packages/x32_sim`, used only by the automated tests, listens only on 127.0.0.1.
 * Preferences and logs are stored in `%APPDATA%\Fadera` and stay on the PC. Diagnostics files are created only when you export them.

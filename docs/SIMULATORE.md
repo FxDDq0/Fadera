@@ -1,6 +1,6 @@
-# Simulatore X32
+# Simulatore X32 (solo per sviluppo e test)
 
-`packages/x32_sim` è un programma separato dall'applicazione. **Non è un mixer** e non va usato come prova di compatibilità hardware.
+`packages/x32_sim` è uno strumento per gli sviluppatori, usato dai test automatici. **Non fa parte del programma**: l'app non lo avvia, non lo propone all'utente e il pacchetto/installer non lo contiene. **Non è un mixer** e non va usato come prova di compatibilità hardware.
 
 ## Avvio
 
@@ -9,9 +9,7 @@ cd packages\x32_sim   # dalla cartella principale del progetto
 dart run x32_sim --port 10023 --model X32
 ```
 
-Poi nell'app: Connessione → indirizzo `127.0.0.1` (oppure compare nella ricerca automatica).
-
-Più semplice: nell'app, Connessione → **Prova senza mixer** avvia il simulatore integrato, senza aprire terminali.
+Poi, in una build di sviluppo: Connessione → indirizzo `127.0.0.1` (oppure compare nella ricerca automatica).
 
 Opzioni: `--model X32|M32|X32P…` (stringa restituita da `/xinfo`), `--init file.txt` (righe di nodo iniziali, per esempio un'esportazione dell'app).
 Comandi da tastiera: `p` pausa (simula la perdita del mixer), `r` ripresa, `f` muove il fader del ch 1 "dalla superficie", `s` statistiche, `q` esci.

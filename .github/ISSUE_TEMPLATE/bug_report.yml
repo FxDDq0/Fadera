@@ -26,7 +26,7 @@ body:
     id: mixer
     attributes:
       label: Mixer model and firmware
-      placeholder: "Behringer X32 Producer, firmware 4.15 (or: simulator)"
+      placeholder: "Behringer X32 Producer, firmware 4.15"
     validations:
       required: true
   - type: dropdown

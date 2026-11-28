@@ -10,6 +10,14 @@ import '../fx/fx_types.dart';
 import '../generated/fx_tables.g.dart';
 import 'param.dart';
 
+// Espressioni regolari compilate una volta sola (prima ricreate a ogni chiamata, migliaia all'avvio).
+final _re1 = RegExp(r'^/eq/(\d)$');
+final _re2 = RegExp(r'^/mix/(\d\d)$');
+final _re3 = RegExp(r'^/dca/([1-8])(/config)?$');
+final _re4 = RegExp(r'^/headamp/(\d{3})$');
+final _re5 = RegExp(r'^/fx/([1-8])(/source|/par)?$');
+final _re6 = RegExp(r'^/outputs/(main|aux|p16|aes|rec)/(\d\d)(/delay|/iQ)?$');
+
 const kOffOn = ['OFF', 'ON'];
 const kColors = ['OFF', 'RD', 'GN', 'YE', 'BL', 'MG', 'CY', 'WH', 'OFFi', 'RDi', 'GNi', 'YEi', 'BLi', 'MGi', 'CYi', 'WHi'];
 const kRatios = ['1.1', '1.3', '1.5', '2.0', '2.5', '3.0', '4.0', '5.0', '7.0', '10', '20', '100'];
@@ -320,14 +328,14 @@ NodeSpec _build(String path) {
           const ParamSpec.linf('weight', -12, 12, 48, '%+5.1f', unit: 'dB'),
         ]);
     }
-    final eq = RegExp(r'^/eq/(\d)$').firstMatch(rest);
+    final eq = _re1.firstMatch(rest);
     if (eq != null) {
       final band = int.parse(eq.group(1)!);
       if (band < 1 || band > strip.eqBands) return opaque;
       final xover = (k == StripKind.mtx || k == StripKind.mainSt || k == StripKind.mainM) && (band == 1 || band == 6);
       return n(_eqBand(xover));
     }
-    final send = RegExp(r'^/mix/(\d\d)$').firstMatch(rest);
+    final send = _re2.firstMatch(rest);
     if (send != null) {
       final s = int.parse(send.group(1)!);
       if (s < 1 || s > strip.sendCount) return opaque;
@@ -339,15 +347,15 @@ NodeSpec _build(String path) {
     return opaque;
   }
 
-  m = RegExp(r'^/dca/([1-8])(/config)?$').firstMatch(path);
+  m = _re3.firstMatch(path);
   if (m != null) {
     return m.group(2) == null ? n([_onOff('on'), _fader]) : n(_config(false));
   }
-  m = RegExp(r'^/headamp/(\d{3})$').firstMatch(path);
+  m = _re4.firstMatch(path);
   if (m != null && int.parse(m.group(1)!) < 128) {
     return n([const ParamSpec.linf('gain', -12, 60, 144, '%+.1f', unit: 'dB'), _onOff('phantom')]);
   }
-  m = RegExp(r'^/fx/([1-8])(/source|/par)?$').firstMatch(path);
+  m = _re5.firstMatch(path);
   if (m != null) {
     final slot = int.parse(m.group(1)!);
     switch (m.group(2)) {
@@ -361,7 +369,7 @@ NodeSpec _build(String path) {
         return NodeSpec(path, const [], dynamicFx: slot);
     }
   }
-  m = RegExp(r'^/outputs/(main|aux|p16|aes|rec)/(\d\d)(/delay|/iQ)?$').firstMatch(path);
+  m = _re6.firstMatch(path);
   if (m != null) {
     final g = m.group(1)!;
     final sub = m.group(3);

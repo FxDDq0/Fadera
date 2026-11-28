@@ -29,8 +29,11 @@ Windows x64 · OSC sulla rete locale · progetto indipendente</p>
 * Editor del canale: gain/trim, fase, filtro passa-alto, delay, gate e compressore con **riduzione di guadagno** reale, EQ parametrico a 4 bande con grafico, mandate.
 * Meter dei canali, rack degli effetti con editor grafici, panoramica del routing (modifica bloccata per impostazione predefinita), scene, snippet e cue.
 * Layer utente, barra dei controlli rapidi, scorciatoie da tastiera, temi colore, modalità touch.
+* **Cerca un canale con Ctrl+F:** scrivi un nome ("Kick") o una sigla ("12", "bus 3", "dca 2") e Fadera apre la pagina giusta.
+* **Avvisi chiari:** un messaggio dice quando il mixer smette di rispondere e quando torna; la barra in alto conta le modifiche che nel frattempo non sono arrivate.
+* **Impostazioni su file:** esporta aspetto, layout, scorciatoie e preferenze e importale su un altro PC (*Impostazioni → Generale*).
+* **Leggibile e accessibile:** testo secondario con contrasto WCAG AA; fader, manopole e strip letti dagli screen reader.
 * **Sicura:** il collegamento *legge* soltanto lo stato del mixer; nulla cambia finché non muovi un controllo.
-* **Simulatore integrato** per provare Fadera senza mixer.
 * **Sei lingue:** italiano, English, Español, Français, Deutsch, Português (automatica da Windows, o scelta nelle *Impostazioni*).
 
 ## Compatibilità
@@ -56,7 +59,7 @@ Windows 10 o 11 a 64 bit, PC sulla **stessa rete del mixer** (cavo o Wi-Fi del r
 ## Collegamento al mixer
 
 1. PC sulla stessa rete del mixer: l'hotspot del telefono è un'altra rete.
-2. Al primo avvio scegli **Cerca il mixer** o **Prova con il simulatore**.
+2. Al primo avvio scegli **Cerca il mixer**.
 3. Scegli il mixer trovato o scrivi il suo indirizzo IP (sul mixer: *Setup → Network*).
 
 ## Segnalazioni

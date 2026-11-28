@@ -24,9 +24,11 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -40,9 +42,13 @@ jobs:
       - name: Version check (tag must match branding/brand.json)
         if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
+        env:
+          # passed as data, never interpolated into the script
+          REF_NAME: ${{ github.ref_name }}
         run: |
+          if ($env:REF_NAME -cnotmatch '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$') { throw "Unexpected tag name: $env:REF_NAME" }
           $v = (Get-Content branding\brand.json -Raw | ConvertFrom-Json).version
-          if ("v$v" -ne "${{ github.ref_name }}") { throw "Tag ${{ github.ref_name }} does not match brand.json version $v" }
+          if ("v$v" -ne $env:REF_NAME) { throw "Tag $env:REF_NAME does not match brand.json version $v" }
 
       - name: Dependencies
         shell: pwsh
@@ -62,8 +68,6 @@ jobs:
         shell: pwsh
         run: |
           Push-Location app; flutter build windows --release; if ($LASTEXITCODE) { exit 1 }; Pop-Location
-          New-Item -ItemType Directory -Force build | Out-Null
-          Push-Location packages\x32_sim; dart compile exe bin\x32_sim.dart -o ..\..\build\x32_sim.exe; if ($LASTEXITCODE) { exit 1 }; Pop-Location
 
       - name: Portable package
         shell: pwsh
@@ -88,7 +92,7 @@ jobs:
           }
           Get-Content dist\*.sha256
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: fadera-windows-x64
           path: |
@@ -103,7 +107,7 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 20
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: fadera-windows-x64
           path: dist
@@ -125,13 +129,12 @@ jobs:
           $dir = "$env:RUNNER_TEMP\FaderaTest"
           $p = Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER',"/DIR=$dir" -Wait -PassThru
           if ($p.ExitCode) { throw "install failed: $($p.ExitCode)" }
-          foreach ($f in 'Fadera.exe','flutter_windows.dll','vcruntime140.dll','data\app.so','data\flutter_assets\NOTICES.Z','simulatore\x32_sim.exe') {
+          foreach ($f in 'Fadera.exe','flutter_windows.dll','vcruntime140.dll','data\app.so','data\flutter_assets\NOTICES.Z') {
             if (-not (Test-Path (Join-Path $dir $f))) { throw "missing after install: $f" }
           }
+          # the program ships no simulator (it exists only for the automated tests)
+          if (Test-Path (Join-Path $dir 'simulatore')) { throw "simulator folder must not be installed" }
           (Get-Item (Join-Path $dir 'Fadera.exe')).VersionInfo | Format-List ProductName, ProductVersion, FileVersion
-          # standalone simulator starts on 127.0.0.1 (pure Dart, no Flutter needed)
-          $sim = Start-Process (Join-Path $dir 'simulatore\x32_sim.exe') -ArgumentList '--port','10050' -PassThru
-          Start-Sleep 3; if ($sim.HasExited) { throw "simulator exited" }; Stop-Process $sim.Id -Force
           # the application starts (informative: the runner desktop may not allow a GPU window)
           $app = Start-Process (Join-Path $dir 'Fadera.exe') -PassThru
           Start-Sleep 10; $app.Refresh()
@@ -151,12 +154,20 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Check the tag name
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "Unexpected tag name: $REF_NAME"; exit 1; }
+          test -f "docs/release-notes/$REF_NAME.md" || { echo "Missing docs/release-notes/$REF_NAME.md"; exit 1; }
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: fadera-windows-x64
           path: dist
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           draft: true
           prerelease: ${{ contains(github.ref_name, '-') }}

@@ -12,7 +12,7 @@ Only results obtained on real hardware are marked as verified.
 ## Function matrix (X32 Producer, firmware 4.15)
 
 **Verified** = tested on the real mixer, value read back from the mixer and confirmed on the console.
-**Simulator** = covered by the automated tests against the built-in simulator.
+**Simulator** = covered by the automated tests against the mixer simulator (a developer tool, not part of the program).
 **Not verified** = implemented, but not yet tested on real hardware.
 
 | Function | Status |

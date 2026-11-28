@@ -16,8 +16,9 @@ import '../l10n/l10n.dart';
 ///
 /// Le curve sono calcolate con le formule standard dai parametri documentati (soglia, ratio,
 /// knee, range, modo): mostrano la caratteristica statica, non il DSP del mixer. La riduzione di
-/// guadagno reale arriva dal banco meter 16 (verificato su X32P FW 4.15, prove A5/A5b) ed è
-/// mostrata da [GainReductionMeter] per i canali 1–32.
+/// guadagno reale arriva dal banco meter 16: la posizione del canale 1 è verificata su X32P FW 4.15
+/// (prove A5/A5b), i canali 2–32 seguono lo stesso ordine [EXT] e non sono verificati uno per uno.
+/// È mostrata da [GainReductionMeter] per i canali 1–32.
 
 const kRatioValues = [1.1, 1.3, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 7.0, 10.0, 20.0, 100.0];
 

@@ -1,9 +1,13 @@
+import 'dart:ui' show AppExitResponse;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'brand.g.dart';
 import 'capture.dart';
 import 'controller/app_controller.dart';
+import 'error_handling.dart';
+import 'ui/dialogs/strip_search_dialog.dart';
 import 'controller/shortcuts.dart';
 import 'theme.dart';
 import 'ui/master_and_quick.dart';
@@ -33,6 +37,7 @@ void main(List<String> args) {
   }
   // --demo: preferenze dimostrative non salvate; --connect=host[:porta]: connessione e sync automatiche
   final ctl = AppController(prefs: args.contains('--demo') ? capturePrefs() : null);
+  installErrorHandlers(ctl);
   runApp(ControllerApp(controller: ctl, splash: true));
   final target = arg('connect');
   if (target != null) {
@@ -40,10 +45,15 @@ void main(List<String> args) {
     () async {
       try {
         await ctl.connect(parts[0], port: parts.length > 1 ? int.parse(parts[1]) : 10023);
-        await ctl.syncFromMixer((_, _) {}, () => false);
+        final r = await ctl.syncFromMixer((_, _) {}, () => false);
+        if (!r.ok) {
+          ctl.log('E', 'sync automatica non riuscita: ${r.error ?? 'interrotta'}');
+          ctl.notify(tr('Connesso, ma la sincronizzazione automatica non è riuscita: {p0}', {'p0': r.error ?? ''}));
+        }
         ctl.select(ctl.stripsFor(Layer.ch1)[5]);
       } on Object catch (e) {
         ctl.log('E', tr('connessione automatica a {p0} non riuscita: {p1}', {'p0': target, 'p1': e}));
+        ctl.notify(tr('connessione automatica a {p0} non riuscita: {p1}', {'p0': target, 'p1': e}));
       }
     }();
   }
@@ -83,7 +93,65 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final _clock = MeterClock();
+  // l'orologio dei meter si ferma quando dal mixer non arrivano più dati (niente ridisegni a vuoto)
+  late final _clock = MeterClock(
+    isLive: () => widget.ctl.meters.anyLive,
+    onIdle: () {
+      widget.ctl.meters.clear();
+      MeterSettings.version++; // dinamiche ricreate: barre e picchi ripartono da vuoto
+    },
+  );
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    // alla chiusura della finestra le preferenze in attesa vengono scritte subito
+    _lifecycle = AppLifecycleListener(onExitRequested: () async {
+      widget.ctl.prefs.saveNow();
+      return AppExitResponse.exit;
+    });
+    widget.ctl.noticeTick.addListener(_showNotices);
+    widget.ctl.searchRequest.addListener(_openSearch);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showNotices());
+  }
+
+  @override
+  void dispose() {
+    widget.ctl.noticeTick.removeListener(_showNotices);
+    widget.ctl.searchRequest.removeListener(_openSearch);
+    _lifecycle.dispose();
+    _clock.dispose();
+    super.dispose();
+  }
+
+  bool _searchOpen = false;
+
+  Future<void> _openSearch() async {
+    if (!mounted || _searchOpen) return;
+    _searchOpen = true;
+    try {
+      await showDialog<void>(context: context, builder: (_) => StripSearchDialog(ctl: widget.ctl));
+    } finally {
+      _searchOpen = false;
+    }
+  }
+
+  void _showNotices() {
+    if (!mounted) return;
+    final m = ScaffoldMessenger.maybeOf(context);
+    if (m == null) return;
+    final ctl = widget.ctl;
+    while (ctl.pendingNotices.isNotEmpty) {
+      final text = ctl.pendingNotices.removeAt(0);
+      m.showSnackBar(SnackBar(
+        content: Text(text, key: const ValueKey('notice')),
+        duration: const Duration(seconds: 8),
+        showCloseIcon: true,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

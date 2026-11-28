@@ -57,6 +57,23 @@ class QuickControl {
       path: j['path'] as String, label: j['label'] as String, color: (j['color'] as num?)?.toInt() ?? 0xFF3E7BFA, wide: j['wide'] as bool? ?? false);
 }
 
+/// Esito di [Prefs.importSettings].
+enum ImportOutcome {
+  /// Tutte le impostazioni importate.
+  ok,
+
+  /// Importate, ma alcuni valori non validi sono rimasti al predefinito ([Prefs.importBadFields]).
+  partial,
+
+  notFound,
+  unreadable,
+
+  /// JSON valido ma non un file di impostazioni di Fadera: nulla viene cambiato.
+  notSettings;
+
+  bool get applied => this == ok || this == partial;
+}
+
 /// Preferenze locali, salvate in JSON (mai inviate al mixer).
 class Prefs {
   String lastHost = '';
@@ -152,50 +169,185 @@ class Prefs {
 
   List<QuickControl> get quick => quickLayouts.putIfAbsent(activeQuickLayout, () => []);
 
-  File get _file => File('${appDataDir().path}${Platform.pathSeparator}prefs.json');
+  /// File delle preferenze; nei test si passa un file in una cartella temporanea.
+  Prefs({File? file}) : _fileOverride = file;
+  final File? _fileOverride;
+  File get _file => _fileOverride ?? File('${appDataDir().path}${Platform.pathSeparator}prefs.json');
   Timer? _saveTimer;
 
-  static Prefs load() {
-    final p = Prefs();
+  /// Esito della lettura: file illeggibile, impostazioni non valide, copia del file originale.
+  bool loadUnreadable = false;
+  final List<String> loadBadFields = [];
+  String? corruptCopyPath;
+
+  /// Descrizione del problema di lettura per il registro (null se tutto è a posto).
+  String? get loadError => loadUnreadable
+      ? 'preferenze non leggibili: uso i valori predefiniti${corruptCopyPath != null ? '; copia: $corruptCopyPath' : ''}'
+      : loadBadFields.isNotEmpty
+          ? 'impostazioni non valide riportate al valore predefinito: ${loadBadFields.join(', ')}${corruptCopyPath != null ? '; copia: $corruptCopyPath' : ''}'
+          : null;
+
+  /// Ultimo errore di salvataggio (null dopo un salvataggio riuscito).
+  String? saveError;
+
+  /// Chiamata quando un salvataggio fallisce (il controller la scrive nel registro).
+  void Function(String message)? onSaveError;
+
+  /// Legge le preferenze. Ogni impostazione è letta da sola: un valore sbagliato torna al
+  /// predefinito senza azzerare le altre. Il file guasto viene conservato accanto
+  /// (`prefs.json.corrupt-<data>`) prima che un salvataggio lo sovrascriva.
+  static Prefs load({File? file, bool keepCorruptCopy = true}) {
+    final p = Prefs(file: file).._keepCopies = keepCorruptCopy;
+    final f = p._file;
+    final String text;
     try {
-      final f = p._file;
-      if (f.existsSync()) {
-        final j = jsonDecode(f.readAsStringSync()) as Map<String, dynamic>;
-        p.lastHost = j['lastHost'] as String? ?? '';
-        p.autoReconnect = j['autoReconnect'] as bool? ?? true;
-        p.welcomeDone = j['welcomeDone'] as bool? ?? false;
-        p.language = j['language'] as String? ?? 'system';
-        p.selectedFollowsMixer = j['selectedFollowsMixer'] as bool? ?? false;
-        p.uiScale = (j['uiScale'] as num?)?.toDouble() ?? 1.0;
-        final ql = j['quickLayouts'] as Map<String, dynamic>?;
-        if (ql != null) {
-          p.quickLayouts = {
-            for (final e in ql.entries) e.key: [for (final q in e.value as List) QuickControl.fromJson(q as Map<String, dynamic>)],
-          };
-        }
-        p.activeQuickLayout = j['activeQuickLayout'] as String? ?? p.quickLayouts.keys.first;
-        p.bandStrips = [for (final s in (j['bandStrips'] as List? ?? const [])) s as String];
-        p.experimentalRecallScope = j['experimentalRecallScope'] as bool? ?? false;
-        p.scopeExcluded = [for (final s in (j['scopeExcluded'] as List? ?? const [])) s as String];
-        p.safeStrips = [for (final s in (j['safeStrips'] as List? ?? const [])) s as String];
-        p.shortcuts = {for (final e in (j['shortcuts'] as Map<String, dynamic>? ?? const {}).entries) e.key: (e.value as num).toInt()};
-        p.colorTheme = j['colorTheme'] as String? ?? 'studio';
-        p.customPalette = [for (final c in (j['customPalette'] as List? ?? const [])) (c as num).toInt()];
-        p.stripColorOverride = {for (final e in (j['stripColorOverride'] as Map<String, dynamic>? ?? const {}).entries) e.key: (e.value as num).toInt()};
-        p.colorProfiles = {for (final e in (j['colorProfiles'] as Map<String, dynamic>? ?? const {}).entries) e.key: e.value as Map<String, dynamic>};
-        p.touchMode = j['touchMode'] as String? ?? 'auto';
-        p.stripsPerPage = (j['stripsPerPage'] as int? ?? 8) == 16 ? 16 : 8;
-        p.quickSlots = (j['quickSlots'] as num?)?.toInt() ?? 12;
-        p.quickBarLarge = j['quickBarLarge'] as bool? ?? false;
-        p.meterPeakHoldMs = (j['meterPeakHoldMs'] as num?)?.toInt() ?? 1500;
-        p.meterFall = (j['meterFall'] as num?)?.toDouble() ?? 26;
-        p.meterPeakReadout = j['meterPeakReadout'] as bool? ?? false;
-      }
+      if (!f.existsSync()) return p;
+      // un file di preferenze sano pesa pochi KB: oltre 1 MB non viene nemmeno letto
+      if (f.lengthSync() > 1024 * 1024) throw const FileSystemException('file troppo grande');
+      text = f.readAsStringSync();
     } on Object {
-      // preferenze illeggibili: si riparte dai valori predefiniti (il file resta per l'analisi)
+      p.loadUnreadable = true;
+      return p;
     }
+    Map<String, dynamic> j;
+    try {
+      j = jsonDecode(text) as Map<String, dynamic>;
+    } on Object {
+      p.loadUnreadable = true;
+      p._keepCorrupt(text);
+      return p;
+    }
+    final bad = p.loadBadFields;
+    void read(String key, void Function(Object? v) apply) {
+      if (!j.containsKey(key)) return;
+      try {
+        apply(j[key]);
+      } on Object {
+        bad.add(key);
+      }
+    }
+
+    read('lastHost', (v) => p.lastHost = v as String);
+    read('autoReconnect', (v) => p.autoReconnect = v as bool);
+    read('welcomeDone', (v) => p.welcomeDone = v as bool);
+    read('language', (v) => p.language = v as String);
+    read('selectedFollowsMixer', (v) => p.selectedFollowsMixer = v as bool);
+    read('uiScale', (v) => p.uiScale = _clampD((v as num).toDouble(), 0.5, 2.5, 1.0));
+    read('quickLayouts', (v) {
+      final layouts = {
+        for (final e in (v as Map<String, dynamic>).entries)
+          e.key: [for (final q in e.value as List) QuickControl.fromJson(q as Map<String, dynamic>)],
+      };
+      if (layouts.isNotEmpty) p.quickLayouts = layouts;
+    });
+    read('activeQuickLayout', (v) => p.activeQuickLayout = v as String);
+    if (!p.quickLayouts.containsKey(p.activeQuickLayout)) p.activeQuickLayout = p.quickLayouts.keys.first;
+    read('bandStrips', (v) => p.bandStrips = [for (final s in v as List) s as String]);
+    read('experimentalRecallScope', (v) => p.experimentalRecallScope = v as bool);
+    read('scopeExcluded', (v) => p.scopeExcluded = [for (final s in v as List) s as String]);
+    read('safeStrips', (v) => p.safeStrips = [for (final s in v as List) s as String]);
+    read('shortcuts', (v) => p.shortcuts = {for (final e in (v as Map<String, dynamic>).entries) e.key: (e.value as num).toInt()});
+    read('colorTheme', (v) => p.colorTheme = v as String);
+    read('customPalette', (v) => p.customPalette = [for (final c in v as List) (c as num).toInt()]);
+    read('stripColorOverride', (v) => p.stripColorOverride = {for (final e in (v as Map<String, dynamic>).entries) e.key: (e.value as num).toInt()});
+    read('colorProfiles', (v) => p.colorProfiles = {for (final e in (v as Map<String, dynamic>).entries) e.key: e.value as Map<String, dynamic>});
+    read('touchMode', (v) => p.touchMode = const ['auto', 'on', 'off'].contains(v) ? v as String : throw FormatException('touchMode: $v'));
+    read('stripsPerPage', (v) => p.stripsPerPage = (v as num).toInt() == 16 ? 16 : 8);
+    read('quickSlots', (v) {
+      final n = (v as num).toInt();
+      p.quickSlots = const [8, 10, 12, 16].contains(n) ? n : 12;
+    });
+    read('quickBarLarge', (v) => p.quickBarLarge = v as bool);
+    read('meterPeakHoldMs', (v) {
+      final n = (v as num).toInt();
+      p.meterPeakHoldMs = n == -1 ? -1 : n.clamp(0, 10000);
+    });
+    read('meterFall', (v) => p.meterFall = _clampD((v as num).toDouble(), 1, 200, 26));
+    read('meterPeakReadout', (v) => p.meterPeakReadout = v as bool);
+    if (bad.isNotEmpty) p._keepCorrupt(text);
     return p;
   }
+
+  static double _clampD(double v, double lo, double hi, double fallback) => v.isFinite ? v.clamp(lo, hi) : fallback;
+
+  /// Conserva il contenuto originale accanto al file (prima che un salvataggio lo sostituisca).
+  bool _keepCopies = true;
+
+  void _keepCorrupt(String text) {
+    if (!_keepCopies) return;
+    try {
+      final ts = DateTime.now().toIso8601String().substring(0, 19).replaceAll(':', '');
+      final copy = File('${_file.path}.corrupt-$ts');
+      copy.writeAsStringSync(text);
+      // al massimo tre copie: un file che resta guasto non riempie la cartella a ogni avvio
+      final name = '${_file.uri.pathSegments.last}.corrupt-';
+      final old = _file.parent.listSync().whereType<File>().where((f) => f.uri.pathSegments.last.startsWith(name)).toList()
+        ..sort((a, b) => b.path.compareTo(a.path));
+      for (final f in old.skip(3)) {
+        f.deleteSync();
+      }
+      corruptCopyPath = copy.path;
+    } on Object {
+      corruptCopyPath = null;
+    }
+  }
+
+  /// Esporta le impostazioni personali (aspetto, layout, scorciatoie, preferenze) in un file
+  /// della cartella [dir]. L'indirizzo del mixer non viene esportato: appartiene a questo PC.
+  File exportSettings(Directory dir) {
+    final j = toJson()
+      ..remove('lastHost')
+      ..remove('welcomeDone');
+    final ts = DateTime.now().toIso8601String().substring(0, 19).replaceAll(':', '');
+    final f = File('${dir.path}${Platform.pathSeparator}impostazioni_$ts.json');
+    f.writeAsStringSync(const JsonEncoder.withIndent('  ').convert({'fadera-settings': 1, ...j}));
+    return f;
+  }
+
+  /// Importa le impostazioni da un file esportato da Fadera (contrassegno `fadera-settings`).
+  /// Il file è letto con le stesse regole delle preferenze (ogni valore controllato); se non è
+  /// leggibile o non è un file di impostazioni non cambia nulla. Indirizzo del mixer e schermata
+  /// di benvenuto restano quelli di questo PC.
+  ImportOutcome importSettings(File f) {
+    if (!f.existsSync()) return ImportOutcome.notFound;
+    try {
+      if (f.lengthSync() > 1024 * 1024) return ImportOutcome.notSettings;
+      final j = jsonDecode(f.readAsStringSync());
+      if (j is! Map<String, dynamic> || j['fadera-settings'] != 1) return ImportOutcome.notSettings;
+    } on Object {
+      return ImportOutcome.unreadable;
+    }
+    final o = Prefs.load(file: f, keepCorruptCopy: false);
+    if (o.loadUnreadable) return ImportOutcome.unreadable;
+    autoReconnect = o.autoReconnect;
+    language = o.language;
+    selectedFollowsMixer = o.selectedFollowsMixer;
+    uiScale = o.uiScale;
+    quickLayouts = o.quickLayouts;
+    activeQuickLayout = o.activeQuickLayout;
+    bandStrips = o.bandStrips;
+    shortcuts = o.shortcuts;
+    experimentalRecallScope = o.experimentalRecallScope;
+    scopeExcluded = o.scopeExcluded;
+    safeStrips = o.safeStrips;
+    colorTheme = o.colorTheme;
+    customPalette = o.customPalette;
+    stripColorOverride = o.stripColorOverride;
+    colorProfiles = o.colorProfiles;
+    touchMode = o.touchMode;
+    stripsPerPage = o.stripsPerPage;
+    quickSlots = o.quickSlots;
+    quickBarLarge = o.quickBarLarge;
+    meterPeakHoldMs = o.meterPeakHoldMs;
+    meterFall = o.meterFall;
+    meterPeakReadout = o.meterPeakReadout;
+    save();
+    importBadFields = List.unmodifiable(o.loadBadFields);
+    return o.loadBadFields.isEmpty ? ImportOutcome.ok : ImportOutcome.partial;
+  }
+
+  /// Valori non validi dell'ultima importazione parziale (rimasti al predefinito).
+  List<String> importBadFields = const [];
 
   Map<String, Object> toJson() => {
         'lastHost': lastHost,
@@ -234,10 +386,26 @@ class Prefs {
     _saveTimer = Timer(const Duration(milliseconds: 400), saveNow);
   }
 
-  void saveNow() {
-    if (!persistent) return;
+  /// Scrittura atomica (file temporaneo poi rinomina). Restituisce falso se non è riuscita:
+  /// l'errore resta in [saveError] e viene segnalato con [onSaveError], mai come eccezione.
+  bool saveNow() {
+    _saveTimer?.cancel();
+    if (!persistent) return true;
     final tmp = File('${_file.path}.tmp');
-    tmp.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(toJson()));
-    tmp.renameSync(_file.path);
+    try {
+      tmp.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(toJson()));
+      tmp.renameSync(_file.path);
+      saveError = null;
+      return true;
+    } on Object catch (e) {
+      saveError = 'preferenze non salvate: $e';
+      try {
+        if (tmp.existsSync()) tmp.deleteSync();
+      } on Object {
+        // il file temporaneo resta: verrà sovrascritto al prossimo salvataggio
+      }
+      onSaveError?.call(saveError!);
+      return false;
+    }
   }
 }

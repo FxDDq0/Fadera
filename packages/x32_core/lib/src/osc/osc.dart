@@ -190,28 +190,50 @@ class _Reader {
 /// Decodifica un datagramma. Restituisce uno o più messaggi (i bundle vengono
 /// appiattiti). Lancia [OscFormatException] per datagrammi malformati
 /// (lunghezza non multipla di 4, stringhe senza terminatore, tag sconosciuti).
+///
+/// Limiti di sicurezza: bundle annidati al massimo [kMaxOscBundleDepth] livelli e al massimo
+/// [kMaxOscMessagesPerDatagram] messaggi per datagramma (il mixer non si avvicina a questi valori).
 List<OscMessage> decodeOsc(Uint8List data) {
+  final out = <OscMessage>[];
+  _decodeInto(data, 0, out);
+  return out;
+}
+
+/// Profondità massima dei bundle annidati in un datagramma.
+const kMaxOscBundleDepth = 4;
+
+/// Numero massimo di messaggi in un datagramma.
+const kMaxOscMessagesPerDatagram = 512;
+
+void _decodeInto(Uint8List data, int depth, List<OscMessage> out) {
   if (data.isEmpty || data.length % 4 != 0) {
     throw OscFormatException('lunghezza ${data.length} non multipla di 4');
   }
   final r = _Reader(data);
   if (data[0] == 0x23) {
+    if (depth >= kMaxOscBundleDepth) throw OscFormatException('bundle annidati oltre $kMaxOscBundleDepth livelli');
     final tag = r.readString();
     if (tag != '#bundle') throw OscFormatException('bundle non valido');
     if (r.pos + 8 > data.length) throw OscFormatException('timetag incompleto');
     r.pos += 8;
-    final out = <OscMessage>[];
     while (r.pos < data.length) {
       final n = r.readInt();
       if (n <= 0 || r.pos + n > data.length) throw OscFormatException('elemento del bundle non valido');
-      out.addAll(decodeOsc(Uint8List.sublistView(data, r.pos, r.pos + n)));
+      _decodeInto(Uint8List.sublistView(data, r.pos, r.pos + n), depth + 1, out);
       r.pos += n;
     }
-    return out;
+    return;
   }
+  if (out.length >= kMaxOscMessagesPerDatagram) {
+    throw OscFormatException('oltre $kMaxOscMessagesPerDatagram messaggi nel datagramma');
+  }
+  out.add(_decodeMessage(r, data));
+}
+
+OscMessage _decodeMessage(_Reader r, Uint8List data) {
   final address = r.readString();
-  if (r.pos >= data.length) return [OscMessage(address, const [], false)];
-  if (data[r.pos] != 0x2c) return [OscMessage(address, const [], false)];
+  if (r.pos >= data.length) return OscMessage(address, const [], false);
+  if (data[r.pos] != 0x2c) return OscMessage(address, const [], false);
   final tags = r.readString();
   final args = <OscArg>[];
   for (final t in tags.substring(1).split('')) {
@@ -228,5 +250,5 @@ List<OscMessage> decodeOsc(Uint8List data) {
         throw OscFormatException('type tag non supportato: $t');
     }
   }
-  return [OscMessage(address, args)];
+  return OscMessage(address, args);
 }

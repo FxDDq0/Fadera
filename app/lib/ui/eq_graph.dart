@@ -1,5 +1,7 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:x32_core/x32_core.dart';
 
@@ -97,14 +99,19 @@ class _EqGraphState extends State<EqGraph> {
 }
 
 class _Band {
-  _Band({required this.type, required this.f, required this.g, required this.q});
+  _Band({required this.type, required this.f, required this.g, required this.q}) {
+    _init();
+  }
   final String type;
   final double f, g, q;
   bool get hasGain => type == 'PEQ' || type == 'VEQ' || type == 'LShv' || type == 'HShv';
 
-  /// Risposta in dB alla frequenza [x] (approssimazione con biquad RBJ a 48 kHz).
-  double db(double x) {
-    const fs = 48000.0;
+  // coefficienti del biquad calcolati una volta (prima a ogni punto di ogni disegno)
+  late final double _b0, _b1, _b2, _a0, _a1, _a2;
+  bool _flat = false;
+  static const fs = 48000.0;
+
+  void _init() {
     final w0 = 2 * math.pi * f / fs;
     final cw = math.cos(w0), sw = math.sin(w0);
     final a = math.pow(10, g / 40).toDouble();
@@ -130,8 +137,18 @@ class _Band {
         b0 = 1 + alpha * a; b1 = -2 * cw; b2 = 1 - alpha * a;
         a0 = 1 + alpha / a; a1 = -2 * cw; a2 = 1 - alpha / a;
       default:
-        return 0; // tipi crossover (BU/BS/LR): non disegnati
+        // tipi crossover (BU/BS/LR): non disegnati
+        _flat = true;
+        b0 = b1 = b2 = a1 = a2 = 0;
+        a0 = 1;
     }
+    _b0 = b0; _b1 = b1; _b2 = b2; _a0 = a0; _a1 = a1; _a2 = a2;
+  }
+
+  /// Risposta in dB alla frequenza [x] (approssimazione con biquad RBJ a 48 kHz).
+  double db(double x) {
+    if (_flat) return 0;
+    final b0 = _b0, b1 = _b1, b2 = _b2, a0 = _a0, a1 = _a1, a2 = _a2;
     final wx = 2 * math.pi * x / fs;
     final c1 = math.cos(wx), s1 = math.sin(wx), c2 = math.cos(2 * wx), s2 = math.sin(2 * wx);
     final nr = b0 + b1 * c1 + b2 * c2, ni = -(b1 * s1 + b2 * s2);
@@ -139,6 +156,11 @@ class _Band {
     final mag = math.sqrt((nr * nr + ni * ni) / (dr * dr + di * di));
     return 20 * math.log(math.max(mag, 1e-9)) / math.ln10;
   }
+
+  @override
+  bool operator ==(Object o) => o is _Band && o.type == type && o.f == f && o.g == g && o.q == q;
+  @override
+  int get hashCode => Object.hash(type, f, g, q);
 }
 
 class _EqPainter extends CustomPainter {
@@ -182,13 +204,16 @@ class _EqPainter extends CustomPainter {
       }
     }
     final col = on ? AppColors.text : AppColors.textFaint;
+    // risposta di ogni banda calcolata una volta per punto e riusata per la curva complessiva
+    final n = w.toInt() ~/ 2 + 1;
+    final freqs = List<double>.generate(n, (k) => s._fOf((k * 2).toDouble(), w));
+    final resp = [for (final b in bands) Float64List.fromList([for (final f in freqs) b.db(f)])];
     // curve delle singole bande (sottili), la selezionata più evidente
     for (var i = 0; i < bands.length; i++) {
-      final b = bands[i];
       final p = Path();
-      for (var x = 0; x <= w.toInt(); x += 3) {
-        final y = s._yOf(b.db(s._fOf(x.toDouble(), w)).clamp(-gRangeClamp, gRangeClamp), h);
-        x == 0 ? p.moveTo(0, y) : p.lineTo(x.toDouble(), y);
+      for (var k = 0; k < n; k++) {
+        final y = s._yOf(resp[i][k].clamp(-gRangeClamp, gRangeClamp), h);
+        k == 0 ? p.moveTo(0, y) : p.lineTo((k * 2).toDouble(), y);
       }
       final c = bandColors[i % bandColors.length];
       final sel = i + 1 == selected;
@@ -206,14 +231,13 @@ class _EqPainter extends CustomPainter {
     }
     // curva complessiva
     final path = Path();
-    for (var i = 0; i <= w.toInt(); i += 2) {
-      final f = s._fOf(i.toDouble(), w);
+    for (var k = 0; k < n; k++) {
       var g = 0.0;
-      for (final b in bands) {
-        g += b.db(f);
+      for (final r in resp) {
+        g += r[k];
       }
       final y = s._yOf(g.clamp(-gRangeClamp, gRangeClamp), h);
-      i == 0 ? path.moveTo(0, y) : path.lineTo(i.toDouble(), y);
+      k == 0 ? path.moveTo(0, y) : path.lineTo((k * 2).toDouble(), y);
     }
     canvas.drawPath(path, Paint()
       ..style = PaintingStyle.stroke
@@ -244,6 +268,7 @@ class _EqPainter extends CustomPainter {
 
   static const gRangeClamp = 18.0;
 
+  /// Ridisegno solo se cambiano bande, stato o selezione (la geometria dipende solo da questi e dalla dimensione).
   @override
-  bool shouldRepaint(_EqPainter o) => true;
+  bool shouldRepaint(_EqPainter o) => o.on != on || o.selected != selected || !listEquals(o.bands, bands);
 }

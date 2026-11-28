@@ -14,11 +14,11 @@ dependencies:
     sdk: flutter
   x32_core:
     path: ../packages/x32_core
-  # simulatore integrato (prova senza mixer, solo su 127.0.0.1)
-  x32_sim:
-    path: ../packages/x32_sim
 
 dev_dependencies:
+  # simulatore usato solo dai test automatici (non fa parte del programma)
+  x32_sim:
+    path: ../packages/x32_sim
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
@@ -27,4 +27,3 @@ flutter:
   uses-material-design: true
   assets:
     - assets/brand/
-    - assets/demo/

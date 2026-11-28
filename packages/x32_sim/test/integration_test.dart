@@ -219,6 +219,90 @@ void main() {
     await c.dispose();
   });
 
+  test('dopo la disconnessione nessun comando parte; dispose ripetibile', () async {
+    final c = await newClient();
+    await c.connect(lo, port: sim.port);
+    await c.disconnect();
+    expect(c.datasetSave('snippet', 9, 'Dopo', ''), isFalse);
+    expect(c.requestNode('/ch/01/mix'), isFalse);
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    expect(sim.datasets['snippet']!.containsKey(9), isFalse);
+    await c.dispose();
+    await c.dispose();
+    expect(c.disposed, isTrue);
+  });
+
+  test('pacchetti dall\'IP del mixer ma da un\'altra porta: ignorati', () async {
+    final c = await newClient();
+    await c.connect(lo, port: sim.port);
+    final before = c.state.getIdx('/ch/05/mix/fader');
+    final spoof = await RawDatagramSocket.bind(lo, 0);
+    spoof.send(encodeOsc(OscMessage('node', [const OscString('/ch/05/mix ON  +10.0 ON +0 OFF   -oo')])), lo, c.transport.localPort);
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    expect(c.state.getIdx('/ch/05/mix/fader'), before);
+    spoof.close();
+    await c.dispose();
+  });
+
+  test('sync PC → Mixer interrotta dalla perdita del collegamento: esito con errore, nessuna eccezione', () async {
+    final c = await newClient();
+    await c.connect(lo, port: sim.port);
+    var dropped = false;
+    final r = await c.syncToMixer(cancelled: () {
+      // a metà invio il collegamento cade (come un cavo staccato)
+      if (!dropped && c.queue.length == 0) {
+        dropped = true;
+        unawaited(c.disconnect());
+      }
+      return false;
+    });
+    expect(r.ok, isFalse);
+    expect(r.cancelled, isFalse);
+    expect(r.error, isNotNull);
+    expect(r.completed, lessThan(r.total));
+    await c.dispose();
+  });
+
+  test('sync PC → Mixer: collegamento perso a metà invio (dopo ~100 righe)', () async {
+    final c = await newClient();
+    await c.connect(lo, port: sim.port);
+    var dropped = false;
+    final r = await c.syncToMixer(onProgress: (done, total) {
+      if (!dropped && done >= 96) {
+        dropped = true;
+        unawaited(c.disconnect());
+      }
+    });
+    expect(r.ok, isFalse);
+    expect(r.error, isNotNull);
+    expect(r.completed, inInclusiveRange(96, r.total - 1));
+    await c.dispose();
+  });
+
+  test('connessione annullata da disconnect mentre il mixer non risponde: errore subito, nessuna sessione', () async {
+    final c = await newClient();
+    sim.paused = true;
+    final pending = c.connect(lo, port: sim.port).then<Object?>((_) => null, onError: (Object e) => e);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    await c.disconnect();
+    final e = await pending.timeout(const Duration(seconds: 1));
+    sim.paused = false;
+    expect(e, isA<ConnectException>());
+    expect(c.link, LinkState.disconnected);
+    await c.dispose();
+    await expectLater(c.connect(lo, port: sim.port), throwsA(isA<ConnectException>()));
+  });
+
+  test('sync senza collegamento: esito con errore invece di un\'eccezione', () async {
+    final c = await newClient();
+    final to = await c.syncToMixer();
+    final from = await c.syncFromMixer();
+    expect(to.ok || from.ok, isFalse);
+    expect(to.error, isNotNull);
+    expect(from.error, isNotNull);
+    await c.dispose();
+  });
+
   test('snippet e cue: save, add, copy, delete; elenco tramite righe /-show/showfile', () async {
     final c = await newClient();
     await c.connect(lo, port: sim.port);

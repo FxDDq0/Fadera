@@ -114,7 +114,8 @@ abstract final class AppColors {
   // testo
   static const text = Color(0xFFE7EAF0);
   static const textDim = Color(0xFF959DAE);
-  static const textFaint = Color(0xFF5E6677);
+  // contrasto ≥ 4,5:1 (WCAG AA) su surface, surface2 e surface3 (prima #5E6677, circa 3:1)
+  static const textFaint = Color(0xFF8A93A5);
 
   // stati: ognuno ha un colore proprio
   static const mute = Color(0xFFE5484D);

@@ -34,8 +34,11 @@ Fadera controls a digital mixer from a Windows PC over the network, using the mi
 * **Routing overview** (editing is locked by default), **scenes, snippets and cues**.
 * **User layer**: build your own page of strips from any category.
 * **Quick controls** bar, keyboard shortcuts, colour themes, touch mode.
+* **Find a channel with Ctrl+F:** type a name ("Kick") or a reference ("12", "bus 3", "dca 2") and Fadera opens the right page.
+* **Clear warnings:** a notice tells you when the mixer stops responding and when it is back; the top bar counts the changes that did not reach the mixer meanwhile.
+* **Settings on file:** export appearance, layouts, shortcuts and preferences, and import them on another PC (*Settings → General*).
+* **Readable and accessible:** secondary text meets WCAG AA contrast; faders, knobs and strips are announced by screen readers.
 * **Safe by design:** connecting only *reads* the mixer state; nothing is changed until you move a control. Commands typed while the mixer is unreachable are discarded, never replayed later.
-* **Built-in simulator:** try Fadera without a mixer.
 * **Six languages:** English, Italiano, Español, Français, Deutsch, Português (automatic from Windows, or chosen in *Settings*).
 
 | Channel EQ | Compressor with gain reduction | Effects |
@@ -76,7 +79,7 @@ Uninstall from *Settings → Apps → Installed apps*. Your preferences in `%APP
 ## Connecting to the mixer
 
 1. Connect the PC to the **same network as the mixer**: the same router/switch by cable, or that router's Wi-Fi. A phone hotspot is a different network and will not see the mixer.
-2. Start Fadera. On first launch a short welcome screen offers **Search for the mixer** or **Try with the simulator**.
+2. Start Fadera. On first launch a short welcome screen offers **Search for the mixer**.
 3. Fadera searches on every network adapter. Pick your mixer, or type its IP address (shown on the mixer under *Setup → Network*).
 4. Fadera reads the mixer state (Mixer → PC). Nothing is written to the mixer during this step.
 
@@ -98,7 +101,7 @@ Security issues: see [SECURITY.md](SECURITY.md).
 
 ## Building from source
 
-See [docs/BUILDING.md](docs/BUILDING.md). The project uses Flutter (Windows desktop) and pure-Dart packages for the protocol engine and the simulator. Every push is built and tested by GitHub Actions.
+See [docs/BUILDING.md](docs/BUILDING.md). The project uses Flutter (Windows desktop) and pure-Dart packages for the protocol engine and for the mixer simulator used by the automated tests. Every push is built and tested by GitHub Actions.
 
 ## License
 
