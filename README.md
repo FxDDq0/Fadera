@@ -34,6 +34,10 @@ Fadera controls a digital mixer from a Windows PC over the network, using the mi
 * **Routing overview** (editing is locked by default), **scenes, snippets and cues**.
 * **User layer**: build your own page of strips from any category.
 * **Quick controls** bar, keyboard shortcuts, colour themes, touch mode.
+* **Find a channel with Ctrl+F:** type a name ("Kick") or a reference ("12", "bus 3", "dca 2") and Fadera opens the right page.
+* **Clear warnings:** a notice tells you when the mixer stops responding and when it is back; the top bar counts the changes that did not reach the mixer meanwhile.
+* **Settings on file:** export appearance, layouts, shortcuts and preferences, and import them on another PC (*Settings → General*).
+* **Readable and accessible:** secondary text meets WCAG AA contrast; faders, knobs and strips are announced by screen readers.
 * **Safe by design:** connecting only *reads* the mixer state; nothing is changed until you move a control. Commands typed while the mixer is unreachable are discarded, never replayed later.
 * **Six languages:** English, Italiano, Español, Français, Deutsch, Português (automatic from Windows, or chosen in *Settings*).
 

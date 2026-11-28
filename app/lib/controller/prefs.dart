@@ -57,6 +57,23 @@ class QuickControl {
       path: j['path'] as String, label: j['label'] as String, color: (j['color'] as num?)?.toInt() ?? 0xFF3E7BFA, wide: j['wide'] as bool? ?? false);
 }
 
+/// Esito di [Prefs.importSettings].
+enum ImportOutcome {
+  /// Tutte le impostazioni importate.
+  ok,
+
+  /// Importate, ma alcuni valori non validi sono rimasti al predefinito ([Prefs.importBadFields]).
+  partial,
+
+  notFound,
+  unreadable,
+
+  /// JSON valido ma non un file di impostazioni di Fadera: nulla viene cambiato.
+  notSettings;
+
+  bool get applied => this == ok || this == partial;
+}
+
 /// Preferenze locali, salvate in JSON (mai inviate al mixer).
 class Prefs {
   String lastHost = '';
@@ -287,13 +304,21 @@ class Prefs {
     return f;
   }
 
-  /// Importa le impostazioni da un file esportato. Il file è letto con le stesse regole delle
-  /// preferenze (ogni valore controllato); se non è leggibile non cambia nulla e restituisce il motivo.
-  /// Indirizzo del mixer e schermata di benvenuto restano quelli di questo PC.
-  String? importSettings(File f) {
+  /// Importa le impostazioni da un file esportato da Fadera (contrassegno `fadera-settings`).
+  /// Il file è letto con le stesse regole delle preferenze (ogni valore controllato); se non è
+  /// leggibile o non è un file di impostazioni non cambia nulla. Indirizzo del mixer e schermata
+  /// di benvenuto restano quelli di questo PC.
+  ImportOutcome importSettings(File f) {
+    if (!f.existsSync()) return ImportOutcome.notFound;
+    try {
+      if (f.lengthSync() > 1024 * 1024) return ImportOutcome.notSettings;
+      final j = jsonDecode(f.readAsStringSync());
+      if (j is! Map<String, dynamic> || j['fadera-settings'] != 1) return ImportOutcome.notSettings;
+    } on Object {
+      return ImportOutcome.unreadable;
+    }
     final o = Prefs.load(file: f, keepCorruptCopy: false);
-    if (!f.existsSync()) return 'file non trovato';
-    if (o.loadUnreadable) return 'file non leggibile';
+    if (o.loadUnreadable) return ImportOutcome.unreadable;
     autoReconnect = o.autoReconnect;
     language = o.language;
     selectedFollowsMixer = o.selectedFollowsMixer;
@@ -317,8 +342,12 @@ class Prefs {
     meterFall = o.meterFall;
     meterPeakReadout = o.meterPeakReadout;
     save();
-    return o.loadBadFields.isEmpty ? null : 'importato, tranne: ${o.loadBadFields.join(', ')}';
+    importBadFields = List.unmodifiable(o.loadBadFields);
+    return o.loadBadFields.isEmpty ? ImportOutcome.ok : ImportOutcome.partial;
   }
+
+  /// Valori non validi dell'ultima importazione parziale (rimasti al predefinito).
+  List<String> importBadFields = const [];
 
   Map<String, Object> toJson() => {
         'lastHost': lastHost,

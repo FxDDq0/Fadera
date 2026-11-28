@@ -45,10 +45,15 @@ void main(List<String> args) {
     () async {
       try {
         await ctl.connect(parts[0], port: parts.length > 1 ? int.parse(parts[1]) : 10023);
-        await ctl.syncFromMixer((_, _) {}, () => false);
+        final r = await ctl.syncFromMixer((_, _) {}, () => false);
+        if (!r.ok) {
+          ctl.log('E', 'sync automatica non riuscita: ${r.error ?? 'interrotta'}');
+          ctl.notify(tr('Connesso, ma la sincronizzazione automatica non è riuscita: {p0}', {'p0': r.error ?? ''}));
+        }
         ctl.select(ctl.stripsFor(Layer.ch1)[5]);
       } on Object catch (e) {
         ctl.log('E', tr('connessione automatica a {p0} non riuscita: {p1}', {'p0': target, 'p1': e}));
+        ctl.notify(tr('connessione automatica a {p0} non riuscita: {p1}', {'p0': target, 'p1': e}));
       }
     }();
   }
@@ -89,7 +94,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   // l'orologio dei meter si ferma quando dal mixer non arrivano più dati (niente ridisegni a vuoto)
-  late final _clock = MeterClock(isLive: () => widget.ctl.meters.anyLive);
+  late final _clock = MeterClock(
+    isLive: () => widget.ctl.meters.anyLive,
+    onIdle: () {
+      widget.ctl.meters.clear();
+      MeterSettings.version++; // dinamiche ricreate: barre e picchi ripartono da vuoto
+    },
+  );
   late final AppLifecycleListener _lifecycle;
 
   @override

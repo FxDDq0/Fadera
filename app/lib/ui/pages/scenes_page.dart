@@ -182,7 +182,7 @@ class _ScenesPageState extends State<ScenesPage> {
                                             }
                                             final ok = c.datasetLoad(_type, e.key);
                                             _sent(ok);
-                                            if (ok) ctl.afterRecall();
+                                            if (ok) ctl.clearUndo();
                                           }
                                         },
                                 ),
@@ -333,6 +333,8 @@ class _LocalFilesState extends State<_LocalFiles> {
     }
     final sent = await client.sendNodeLines(plan.sendable);
     final complete = sent == plan.sendable.length && ctl.isOnline;
+    // invio parziale: non si sa con certezza quali righe sono arrivate, lo stato va riallineato
+    if (!complete) ctl.synced = false;
     // lo stato locale segue solo ciò che è partito davvero
     for (final l in plan.sendable.take(sent)) {
       ctl.state.applyNodeLine(l, ChangeOrigin.load);

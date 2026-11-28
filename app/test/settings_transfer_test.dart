@@ -25,7 +25,7 @@ void main() {
     final b = Prefs()
       ..persistent = false
       ..lastHost = '10.0.0.9';
-    expect(b.importSettings(f), isNull);
+    expect(b.importSettings(f), ImportOutcome.ok);
     expect(b.colorTheme, 'live');
     expect(b.stripsPerPage, 16);
     expect(b.quickSlots, 16);
@@ -56,7 +56,11 @@ void main() {
     final b = Prefs()
       ..persistent = false
       ..colorTheme = 'minimal';
-    expect(b.importSettings(bad), isNotNull);
+    expect(b.importSettings(bad), ImportOutcome.unreadable);
+    expect(b.colorTheme, 'minimal');
+    // JSON valido ma non un file di impostazioni (vuoto, backup, preferenze di altri): rifiutato
+    final other = File('${dir.path}${Platform.pathSeparator}altro.json')..writeAsStringSync('{}');
+    expect(b.importSettings(other), ImportOutcome.notSettings);
     expect(b.colorTheme, 'minimal');
   });
 }

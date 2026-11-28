@@ -5,7 +5,8 @@ import 'package:x32_remote/ui/widgets/controls.dart';
 void main() {
   test('senza dati dei meter l\'orologio smette di ridisegnare dopo la caduta delle barre', () {
     var live = true;
-    final clock = MeterClock(isLive: () => live);
+    var idleCalls = 0;
+    final clock = MeterClock(isLive: () => live, onIdle: () => idleCalls++);
     var frames = 0;
     clock.addListener(() => frames++);
     var t = Duration.zero;
@@ -24,6 +25,7 @@ void main() {
     expect(afterIdle, lessThan(60 + 60 * 5)); // si ferma entro qualche secondo (tempo per svuotare le barre)
     run(120);
     expect(frames, afterIdle); // fermo
+    expect(idleCalls, 1); // un solo svuotamento, seguito da un ultimo ridisegno
     live = true;
     run(10);
     expect(frames, afterIdle + 10); // riparte subito

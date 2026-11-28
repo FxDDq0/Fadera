@@ -289,8 +289,14 @@ String? layoutNameProblem(Prefs p, String name) {
 /// alla volta non bastava mai a cambiare valore.
 class QuickDragAccumulator {
   double _rest = 0;
+  ParamSpec? _spec;
   void reset() => _rest = 0;
   int update(ParamSpec spec, int idx, double dx) {
+    // un altro parametro (layout cambiato o importato): il resto accumulato non vale più
+    if (!identical(spec, _spec)) {
+      _rest = 0;
+      _spec = spec;
+    }
     final wanted = (spec.fraction(idx) + _rest + dx / 300).clamp(0.0, 1.0);
     final next = spec.idxFromFraction(wanted);
     _rest = wanted - spec.fraction(next);

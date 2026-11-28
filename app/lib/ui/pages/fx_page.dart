@@ -432,7 +432,10 @@ class _TypeSelector extends StatelessWidget {
             ctl.setIdx('/fx/$slot/type', i);
             // valori di partenza locali dall'Appendice C, poi lettura dei valori reali dal mixer
             ctl.state.resetFxParams(slot, ChangeOrigin.load);
-            ctl.client?.requestNode('/fx/$slot/par');
+            // senza rilettura i valori mostrati sono quelli predefiniti, non quelli del mixer: lo si dice
+            if (!(ctl.client?.requestNode('/fx/$slot/par') ?? false)) {
+              ctl.notify(tr("Parametri dell'effetto non riletti dal mixer: i valori mostrati sono quelli predefiniti."));
+            }
             ctl.hub.refreshAll();
           },
         ),

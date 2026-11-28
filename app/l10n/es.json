@@ -750,5 +750,9 @@
  "Aspetto, colori, barra rapida, layer utente, scorciatoie e preferenze, per un altro PC o come copia. L’indirizzo del mixer resta quello di questo PC.": "Aspecto, colores, barra rápida, capa de usuario, atajos y preferencias, para otro PC o como copia. La dirección del mezclador sigue siendo la de este PC.",
  "Esporta": "Exportar",
  "Importa…": "Importar…",
- "Fader {p0}": "Fader {p0}"
+ "Fader {p0}": "Fader {p0}",
+ "Connesso, ma la sincronizzazione automatica non è riuscita: {p0}": "Conectado, pero la sincronización automática falló: {p0}",
+ "Parametri dell'effetto non riletti dal mixer: i valori mostrati sono quelli predefiniti.": "Parámetros del efecto no leídos del mezclador: los valores mostrados son los predeterminados.",
+ "Impostazioni non importate: il file non è un file di impostazioni di Fadera.": "Configuración no importada: el archivo no es un archivo de configuración de Fadera.",
+ "backup non valido: lo stato è stato ripristinato solo in parte": "copia de seguridad no válida: el estado se restauró solo en parte"
 }

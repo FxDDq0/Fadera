@@ -12,7 +12,7 @@ void main() {
     final ctl = AppController(prefs: Prefs()..persistent = false);
     ctl.setIdx('/ch/01/mix/fader', 500);
     expect(ctl.canUndo, isTrue);
-    ctl.afterRecall();
+    ctl.clearUndo();
     expect(ctl.canUndo, isFalse);
     ctl.dispose();
   });

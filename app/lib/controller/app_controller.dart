@@ -179,7 +179,9 @@ class AppController extends ChangeNotifier {
     if (c.origin != ChangeOrigin.remote) return;
     final m = _fxTypePath.firstMatch(c.path);
     if (m == null) return;
-    _client?.requestNode('/fx/${m.group(1)}/par');
+    if (!(_client?.requestNode('/fx/${m.group(1)}/par') ?? false)) {
+      notify(tr("Parametri dell'effetto non riletti dal mixer: i valori mostrati sono quelli predefiniti."));
+    }
     _fxRefresh?.cancel();
     _fxRefresh = Timer(const Duration(milliseconds: 150), () {
       if (!_disposed) hub.refreshAll();
@@ -190,7 +192,12 @@ class AppController extends ChangeNotifier {
   final List<String> pendingNotices = [];
   final ValueNotifier<int> noticeTick = ValueNotifier(0);
 
+  /// Risultato di una sync chiesta senza collegamento.
+  SyncResult _notConnected() => SyncResult(0, kSyncNodes.length, 0, Duration.zero, error: tr('mixer non connesso'));
+
   void notify(String message) {
+    // al massimo 20 avvisi in attesa: una serie di cadute e riprese non riempie la memoria
+    if (pendingNotices.length >= 20) pendingNotices.removeAt(0);
     pendingNotices.add(message);
     noticeTick.value++;
   }
@@ -211,17 +218,19 @@ class AppController extends ChangeNotifier {
 
   /// Importa le impostazioni da [f] e le applica subito (tema, colori, lingua, pagine).
   bool importSettings(File f) {
-    final problem = prefs.importSettings(f);
-    if (problem == 'file non leggibile' || problem == 'file non trovato') {
-      log('W', 'importazione di ${f.path}: $problem');
-      notify(tr('Impostazioni non importate: il file non è leggibile.'));
+    final outcome = prefs.importSettings(f);
+    if (!outcome.applied) {
+      log('W', 'importazione di ${f.path}: ${outcome.name}');
+      notify(outcome == ImportOutcome.notSettings
+          ? tr('Impostazioni non importate: il file non è un file di impostazioni di Fadera.')
+          : tr('Impostazioni non importate: il file non è leggibile.'));
       return false;
     }
     applyAppearance();
     L10n.apply(prefs.language);
     layer = _normalizeLayer(layer);
-    log('I', 'impostazioni importate da ${f.path}${problem != null ? ' ($problem)' : ''}');
-    notify(problem == null ? tr('Impostazioni importate.') : tr('Impostazioni importate; alcuni valori non validi sono rimasti quelli predefiniti.'));
+    log('I', 'impostazioni importate da ${f.path}${outcome == ImportOutcome.partial ? ' (non validi: ${prefs.importBadFields.join(', ')})' : ''}');
+    notify(outcome == ImportOutcome.ok ? tr('Impostazioni importate.') : tr('Impostazioni importate; alcuni valori non validi sono rimasti quelli predefiniti.'));
     notifyListeners();
     return true;
   }
@@ -265,8 +274,6 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Da chiamare dopo un richiamo di scena, snippet o cue partito verso il mixer.
-  void afterRecall() => clearUndo();
 
   void _recordUndo(ParamChange c) {
     if (c.origin != ChangeOrigin.local || _undoing || c.previous == null) return;
@@ -653,6 +660,10 @@ class AppController extends ChangeNotifier {
   Future<MixerInfo> _connectNow(String host, int port, int epoch) async {
     _checkEpoch(epoch);
     clearUndo();
+    // stato della connessione precedente: niente "il mixer risponde di nuovo" né conteggi
+    // di modifiche non inviate riferiti a un altro collegamento
+    _lastLink = LinkState.disconnected;
+    unsentEdits.value = 0;
     await _disconnectNow();
     _checkEpoch(epoch);
     final addr = (await InternetAddress.lookup(host)).firstWhere((a) => a.type == InternetAddressType.IPv4);
@@ -776,9 +787,9 @@ class AppController extends ChangeNotifier {
 
   Future<SyncResult> syncFromMixer(void Function(int, int) progress, bool Function() cancelled) async {
     final c = _client;
-    if (c == null) return SyncResult(0, kSyncNodes.length, 0, Duration.zero, error: tr('mixer non connesso'));
+    if (c == null) return _notConnected();
     final r = await c.syncFromMixer(onProgress: progress, cancelled: cancelled);
-    _undo.clear();
+    clearUndo();
     // dopo una sync completa lo stato del PC è di nuovo quello del mixer
     if (r.ok) unsentEdits.value = 0;
     lastSync = r;
@@ -808,7 +819,7 @@ class AppController extends ChangeNotifier {
 
   Future<SyncResult> syncToMixer(void Function(int, int) progress, bool Function() cancelled) async {
     final c = _client;
-    if (c == null) return SyncResult(0, kSyncNodes.length, 0, Duration.zero, error: tr('mixer non connesso'));
+    if (c == null) return _notConnected();
     final r = await c.syncToMixer(onProgress: progress, cancelled: cancelled);
     // dopo un invio parziale lo stato del mixer non coincide più con quello del PC
     synced = r.ok;
@@ -827,7 +838,16 @@ class AppController extends ChangeNotifier {
       log('E', 'backup ${f.path} non valido: $e');
       return tr('file di backup non valido');
     }
-    state.restoreValues(values, ChangeOrigin.load);
+    try {
+      state.restoreValues(values, ChangeOrigin.load);
+    } on Object catch (e) {
+      // valori di tipo sbagliato: lo stato può essere stato ripristinato solo in parte
+      log('E', 'ripristino di ${f.path} interrotto: $e');
+      synced = false;
+      hub.refreshAll();
+      notifyListeners();
+      return tr('backup non valido: lo stato è stato ripristinato solo in parte');
+    }
     _undo.clear();
     hub.refreshAll();
     notifyListeners();
@@ -905,8 +925,15 @@ class AppController extends ChangeNotifier {
     () async {
       try {
         await c?.dispose();
+      } on Object catch (e) {
+        // il registro si sta chiudendo: resta solo la console di debug
+        debugPrint('Fadera: chiusura del collegamento non riuscita: $e');
       } finally {
-        await log?.close();
+        try {
+          await log?.close();
+        } on Object catch (e) {
+          debugPrint('Fadera: chiusura del registro non riuscita: $e');
+        }
       }
     }();
     super.dispose();

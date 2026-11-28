@@ -750,5 +750,9 @@
  "Aspetto, colori, barra rapida, layer utente, scorciatoie e preferenze, per un altro PC o come copia. L’indirizzo del mixer resta quello di questo PC.": "Apparence, couleurs, barre rapide, calque utilisateur, raccourcis et préférences, pour un autre PC ou en copie. L'adresse de la console reste celle de ce PC.",
  "Esporta": "Exporter",
  "Importa…": "Importer…",
- "Fader {p0}": "Fader {p0}"
+ "Fader {p0}": "Fader {p0}",
+ "Connesso, ma la sincronizzazione automatica non è riuscita: {p0}": "Connecté, mais la synchronisation automatique a échoué : {p0}",
+ "Parametri dell'effetto non riletti dal mixer: i valori mostrati sono quelli predefiniti.": "Paramètres de l'effet non relus depuis la console : les valeurs affichées sont celles par défaut.",
+ "Impostazioni non importate: il file non è un file di impostazioni di Fadera.": "Réglages non importés : le fichier n'est pas un fichier de réglages Fadera.",
+ "backup non valido: lo stato è stato ripristinato solo in parte": "sauvegarde non valide : l'état n'a été restauré qu'en partie"
 }

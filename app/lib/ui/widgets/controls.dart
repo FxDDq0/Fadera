@@ -384,12 +384,15 @@ class _ScalePainter extends CustomPainter {
 /// Con [isLive] si ferma quando non arrivano dati dei meter da più di [idleAfter]
 /// (il tempo serve alle barre per scendere a zero) e riparte al primo dato.
 class MeterClock extends ChangeNotifier {
-  MeterClock({this.isLive, this.idleAfter = const Duration(seconds: 4)});
+  MeterClock({this.isLive, this.onIdle, this.idleAfter = const Duration(seconds: 4)});
   final bool Function()? isLive;
+
+  /// Chiamata all'ingresso nello stato fermo, prima dell'ultimo ridisegno (per svuotare i meter).
+  final VoidCallback? onIdle;
   final Duration idleAfter;
   int lastMs = 0;
   int dtMs = 16;
-  int _lastLiveMs = 0;
+  int? _lastLiveMs; // primo tick: l'attesa parte da lì, non da zero
   bool _idle = false;
 
   /// Vero quando l'orologio è fermo (nessun ridisegno dei meter).
@@ -400,12 +403,15 @@ class MeterClock extends ChangeNotifier {
     dtMs = (ms - lastMs).clamp(0, 100);
     lastMs = ms;
     final live = isLive?.call() ?? true;
+    _lastLiveMs ??= ms;
     if (live) {
       _lastLiveMs = ms;
       _idle = false;
-    } else if (ms - _lastLiveMs > idleAfter.inMilliseconds) {
+    } else if (ms - _lastLiveMs! > idleAfter.inMilliseconds) {
+      if (_idle) return;
+      // ultimo ridisegno con i meter vuoti: niente picchi congelati a metà caduta
       _idle = true;
-      return;
+      onIdle?.call();
     }
     notifyListeners();
   }
@@ -475,7 +481,8 @@ class _LevelMeterState extends State<LevelMeter> {
       waitDuration: const Duration(milliseconds: 900),
       child: GestureDetector(
         // tocco: azzera clip e picco tenuto
-        onTap: widget.available ? () => _b = MeterSettings.ballistics() : null,
+        // anche a orologio fermo il tocco si vede subito (ricostruzione del disegno)
+        onTap: widget.available ? () => setState(() => _b = MeterSettings.ballistics()) : null,
         child: RepaintBoundary(
           child: CustomPaint(
             size: Size(widget.width, double.infinity),
