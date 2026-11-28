@@ -722,5 +722,8 @@
  "file di backup non valido": "fichier de sauvegarde non valide",
  "Solo lettere senza accento, numeri e simboli comuni.": "Uniquement lettres sans accent, chiffres et symboles courants.",
  "Comando non inviato: il mixer non è raggiungibile.": "Commande non envoyée : la console n'est pas joignable.",
- "Backup non riuscito ({p0}): richiamo annullato.": "Échec de la sauvegarde ({p0}) : rappel annulé."
+ "Backup non riuscito ({p0}): richiamo annullato.": "Échec de la sauvegarde ({p0}) : rappel annulé.",
+ "Scrivi un nome.": "Saisis un nom.",
+ "Nome riservato: scegline un altro.": "Nom réservé : choisis-en un autre.",
+ "Esiste già un layout con questo nome.": "Une disposition porte déjà ce nom."
 }

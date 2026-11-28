@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'app_controller.dart';
+import 'prefs.dart';
 import '../l10n/l10n.dart';
 
 /// Azioni da tastiera (personalizzabili, salvate nelle preferenze).
@@ -33,10 +34,23 @@ enum ShortcutAction {
   final LogicalKeyboardKey defaultKey;
 }
 
-/// Tasto assegnato a un'azione (personalizzato o predefinito).
-LogicalKeyboardKey keyFor(AppController ctl, ShortcutAction a) {
-  final id = ctl.prefs.shortcuts[a.name];
-  return id == null ? a.defaultKey : LogicalKeyboardKey(id);
+/// Tasto assegnato a un'azione (personalizzato o predefinito); null se l'azione non ha tasto.
+LogicalKeyboardKey? keyFor(AppController ctl, ShortcutAction a) => shortcutKey(ctl.prefs, a);
+
+/// Come [keyFor], dalle sole preferenze. Il valore 0 salvato significa "nessun tasto".
+LogicalKeyboardKey? shortcutKey(Prefs p, ShortcutAction a) {
+  final id = p.shortcuts[a.name];
+  if (id == null) return a.defaultKey;
+  return id == 0 ? null : LogicalKeyboardKey(id);
+}
+
+/// Assegna [key] ad [a]. Un tasto vale per una sola azione: chi lo usava, anche come
+/// predefinito, resta senza tasto (prima Solo su "M" non scattava mai, perché vinceva Mute).
+void assignShortcut(Prefs p, ShortcutAction a, LogicalKeyboardKey key) {
+  for (final b in ShortcutAction.values) {
+    if (b != a && shortcutKey(p, b) == key) p.shortcuts[b.name] = 0;
+  }
+  p.shortcuts[a.name] = key.keyId;
 }
 
 /// Vero se il fuoco è in un campo di testo: in quel caso le scorciatoie non agiscono.

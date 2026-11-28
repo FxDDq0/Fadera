@@ -332,9 +332,9 @@ class MixerState {
       // conserva la spaziatura originale dopo il percorso
       final idx = line.indexOf(path) + path.length;
       final tail = line.substring(idx).replaceFirst(RegExp(r'^ '), '').trimRight();
-      final changed = n.rawText != tail;
+      // nodo opaco: il testo è conservato così com'è (riga applicata, nessun evento per campo)
       n.rawText = tail.isEmpty ? text : tail;
-      return changed || true;
+      return true;
     }
     if (n.spec.dynamicFx != null && n.fields.isEmpty) _rebuildFxPar(n.spec.dynamicFx!);
     if (tokens.length != n.fields.length) {

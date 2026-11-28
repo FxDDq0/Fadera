@@ -157,7 +157,8 @@ class MeterBallistics {
     if (_level > _target) _level = math.max(_target, _level - fallDbPerSecond * dt);
     _peakAgeMs += dtMs;
     if (_peakAgeMs > peakHoldMs) _peak = math.max(_level, _peak - peakFallDbPerSecond * dt);
-    if (_level < floorDb) _level = math.max(_level, -127);
+    // sotto la soglia minima la barra si svuota invece di scendere lentamente fino a -127
+    if (_level < floorDb) _level = -127;
   }
 
   void resetClip() => _clip = false;

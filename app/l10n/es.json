@@ -722,5 +722,8 @@
  "file di backup non valido": "archivo de copia de seguridad no válido",
  "Solo lettere senza accento, numeri e simboli comuni.": "Solo letras sin acento, números y símbolos comunes.",
  "Comando non inviato: il mixer non è raggiungibile.": "Comando no enviado: el mezclador no está accesible.",
- "Backup non riuscito ({p0}): richiamo annullato.": "La copia de seguridad falló ({p0}): recuperación cancelada."
+ "Backup non riuscito ({p0}): richiamo annullato.": "La copia de seguridad falló ({p0}): recuperación cancelada.",
+ "Scrivi un nome.": "Escribe un nombre.",
+ "Nome riservato: scegline un altro.": "Nombre reservado: elige otro.",
+ "Esiste già un layout con questo nome.": "Ya existe un diseño con este nombre."
 }

@@ -722,5 +722,8 @@
  "file di backup non valido": "invalid backup file",
  "Solo lettere senza accento, numeri e simboli comuni.": "Only unaccented letters, digits and common symbols.",
  "Comando non inviato: il mixer non è raggiungibile.": "Command not sent: the mixer cannot be reached.",
- "Backup non riuscito ({p0}): richiamo annullato.": "Backup failed ({p0}): recall cancelled."
+ "Backup non riuscito ({p0}): richiamo annullato.": "Backup failed ({p0}): recall cancelled.",
+ "Scrivi un nome.": "Enter a name.",
+ "Nome riservato: scegline un altro.": "Reserved name: choose another one.",
+ "Esiste già un layout con questo nome.": "A layout with this name already exists."
 }

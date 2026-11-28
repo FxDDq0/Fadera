@@ -722,5 +722,8 @@
  "file di backup non valido": "ungültige Sicherungsdatei",
  "Solo lettere senza accento, numeri e simboli comuni.": "Nur Buchstaben ohne Akzent, Ziffern und gängige Zeichen.",
  "Comando non inviato: il mixer non è raggiungibile.": "Befehl nicht gesendet: das Mischpult ist nicht erreichbar.",
- "Backup non riuscito ({p0}): richiamo annullato.": "Sicherung fehlgeschlagen ({p0}): Abruf abgebrochen."
+ "Backup non riuscito ({p0}): richiamo annullato.": "Sicherung fehlgeschlagen ({p0}): Abruf abgebrochen.",
+ "Scrivi un nome.": "Gib einen Namen ein.",
+ "Nome riservato: scegline un altro.": "Reservierter Name: wähle einen anderen.",
+ "Esiste già un layout con questo nome.": "Ein Layout mit diesem Namen gibt es schon."
 }

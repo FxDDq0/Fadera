@@ -722,5 +722,8 @@
  "file di backup non valido": "arquivo de backup inválido",
  "Solo lettere senza accento, numeri e simboli comuni.": "Apenas letras sem acento, números e símbolos comuns.",
  "Comando non inviato: il mixer non è raggiungibile.": "Comando não enviado: a mesa não está acessível.",
- "Backup non riuscito ({p0}): richiamo annullato.": "Falha no backup ({p0}): chamada cancelada."
+ "Backup non riuscito ({p0}): richiamo annullato.": "Falha no backup ({p0}): chamada cancelada.",
+ "Scrivi un nome.": "Digite um nome.",
+ "Nome riservato: scegline un altro.": "Nome reservado: escolha outro.",
+ "Esiste già un layout con questo nome.": "Já existe um layout com este nome."
 }

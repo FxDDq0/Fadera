@@ -33,6 +33,7 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
   int? _readBack;
   StreamSubscription<String>? _sub;
   Timer? _timer;
+  bool _armed = false;
 
   @override
   void dispose() {
@@ -59,8 +60,9 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
     _sub?.cancel();
     _timer?.cancel();
     final nodePath = '${widget.strip.base}/config';
+    _armed = false;
     _sub = c.nodeLines.listen((line) {
-      if (!line.startsWith('$nodePath ')) return;
+      if (!_armed || !line.startsWith('$nodePath ')) return;
       final v = _iconFromLine(line);
       _timer?.cancel();
       _sub?.cancel();
@@ -74,7 +76,17 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
     ctl.setIdx(_path, id);
     // rilettura dal mixer: la conferma è la sua risposta, non il nostro invio
     await Future<void>.delayed(const Duration(milliseconds: 150));
-    c.requestNode(nodePath);
+    if (!mounted) {
+      _sub?.cancel();
+      return;
+    }
+    // si ascolta solo da qui: una riga arrivata prima della richiesta non è una conferma
+    _armed = true;
+    if (!c.requestNode(nodePath)) {
+      _sub?.cancel();
+      setState(() => _status = _Status.timeout);
+      return;
+    }
     _timer = Timer(const Duration(seconds: 2), () {
       _sub?.cancel();
       if (mounted && _status == _Status.sending) setState(() => _status = _Status.timeout);

@@ -162,9 +162,7 @@ class _ShortcutsTabState extends State<_ShortcutsTab> {
     );
     if (key == null) return;
     final p = widget.ctl.prefs;
-    // un tasto per una sola azione: chi lo usava torna al proprio predefinito
-    p.shortcuts.removeWhere((k, v) => v == key.keyId);
-    p.shortcuts[a.name] = key.keyId;
+    assignShortcut(p, a, key);
     p.save();
     setState(() {});
   }
@@ -183,7 +181,7 @@ class _ShortcutsTabState extends State<_ShortcutsTab> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(color: AppColors.surface3, borderRadius: BorderRadius.circular(4)),
-                  child: Text(keyFor(ctl, a).keyLabel, style: mono.copyWith(fontSize: 12)),
+                  child: Text(keyFor(ctl, a)?.keyLabel ?? '—', style: mono.copyWith(fontSize: 12)),
                 ),
                 const SizedBox(width: 8),
                 TextButton(onPressed: () => _capture(a), child: Text(tr('Cambia'))),
