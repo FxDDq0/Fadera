@@ -179,8 +179,8 @@ class Prefs {
   /// Legge le preferenze. Ogni impostazione è letta da sola: un valore sbagliato torna al
   /// predefinito senza azzerare le altre. Il file guasto viene conservato accanto
   /// (`prefs.json.corrupt-<data>`) prima che un salvataggio lo sovrascriva.
-  static Prefs load({File? file}) {
-    final p = Prefs(file: file);
+  static Prefs load({File? file, bool keepCorruptCopy = true}) {
+    final p = Prefs(file: file).._keepCopies = keepCorruptCopy;
     final f = p._file;
     final String text;
     try {
@@ -254,7 +254,10 @@ class Prefs {
   static double _clampD(double v, double lo, double hi, double fallback) => v.isFinite ? v.clamp(lo, hi) : fallback;
 
   /// Conserva il contenuto originale accanto al file (prima che un salvataggio lo sostituisca).
+  bool _keepCopies = true;
+
   void _keepCorrupt(String text) {
+    if (!_keepCopies) return;
     try {
       final ts = DateTime.now().toIso8601String().substring(0, 19).replaceAll(':', '');
       final copy = File('${_file.path}.corrupt-$ts');
@@ -270,6 +273,51 @@ class Prefs {
     } on Object {
       corruptCopyPath = null;
     }
+  }
+
+  /// Esporta le impostazioni personali (aspetto, layout, scorciatoie, preferenze) in un file
+  /// della cartella [dir]. L'indirizzo del mixer non viene esportato: appartiene a questo PC.
+  File exportSettings(Directory dir) {
+    final j = toJson()
+      ..remove('lastHost')
+      ..remove('welcomeDone');
+    final ts = DateTime.now().toIso8601String().substring(0, 19).replaceAll(':', '');
+    final f = File('${dir.path}${Platform.pathSeparator}impostazioni_$ts.json');
+    f.writeAsStringSync(const JsonEncoder.withIndent('  ').convert({'fadera-settings': 1, ...j}));
+    return f;
+  }
+
+  /// Importa le impostazioni da un file esportato. Il file è letto con le stesse regole delle
+  /// preferenze (ogni valore controllato); se non è leggibile non cambia nulla e restituisce il motivo.
+  /// Indirizzo del mixer e schermata di benvenuto restano quelli di questo PC.
+  String? importSettings(File f) {
+    final o = Prefs.load(file: f, keepCorruptCopy: false);
+    if (!f.existsSync()) return 'file non trovato';
+    if (o.loadUnreadable) return 'file non leggibile';
+    autoReconnect = o.autoReconnect;
+    language = o.language;
+    selectedFollowsMixer = o.selectedFollowsMixer;
+    uiScale = o.uiScale;
+    quickLayouts = o.quickLayouts;
+    activeQuickLayout = o.activeQuickLayout;
+    bandStrips = o.bandStrips;
+    shortcuts = o.shortcuts;
+    experimentalRecallScope = o.experimentalRecallScope;
+    scopeExcluded = o.scopeExcluded;
+    safeStrips = o.safeStrips;
+    colorTheme = o.colorTheme;
+    customPalette = o.customPalette;
+    stripColorOverride = o.stripColorOverride;
+    colorProfiles = o.colorProfiles;
+    touchMode = o.touchMode;
+    stripsPerPage = o.stripsPerPage;
+    quickSlots = o.quickSlots;
+    quickBarLarge = o.quickBarLarge;
+    meterPeakHoldMs = o.meterPeakHoldMs;
+    meterFall = o.meterFall;
+    meterPeakReadout = o.meterPeakReadout;
+    save();
+    return o.loadBadFields.isEmpty ? null : 'importato, tranne: ${o.loadBadFields.join(', ')}';
   }
 
   Map<String, Object> toJson() => {

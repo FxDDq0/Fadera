@@ -737,5 +737,17 @@
  "Sincronizzazione…": "Syncing…",
  "Connessione…": "Connecting…",
  "Modifiche fatte mentre il mixer non rispondeva: non sono arrivate al mixer. Rifai la sincronizzazione Mixer → PC; clic per nascondere.": "Changes made while the mixer was not responding: they did not reach it. Run the Mixer → PC sync again; click to hide.",
- "{p0} non inviate": "{p0} not sent"
+ "{p0} non inviate": "{p0} not sent",
+ "Impostazioni esportate: {p0}": "Settings exported: {p0}",
+ "Impostazioni non importate: il file non è leggibile.": "Settings not imported: the file cannot be read.",
+ "Impostazioni importate.": "Settings imported.",
+ "Impostazioni importate; alcuni valori non validi sono rimasti quelli predefiniti.": "Settings imported; some invalid values kept their default.",
+ "Importa le impostazioni": "Import settings",
+ "File nella cartella {p0} (per portarle da un altro PC copia qui il file esportato):": "Files in the folder {p0} (to bring them from another PC, copy the exported file here):",
+ "Nessun file di impostazioni.": "No settings file.",
+ "Apri la cartella": "Open the folder",
+ "Impostazioni su file": "Settings file",
+ "Aspetto, colori, barra rapida, layer utente, scorciatoie e preferenze, per un altro PC o come copia. L’indirizzo del mixer resta quello di questo PC.": "Appearance, colours, quick bar, user layer, shortcuts and preferences, for another PC or as a copy. The mixer address stays the one of this PC.",
+ "Esporta": "Export",
+ "Importa…": "Import…"
 }

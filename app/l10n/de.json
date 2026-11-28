@@ -737,5 +737,17 @@
  "Sincronizzazione…": "Synchronisierung…",
  "Connessione…": "Verbindung…",
  "Modifiche fatte mentre il mixer non rispondeva: non sono arrivate al mixer. Rifai la sincronizzazione Mixer → PC; clic per nascondere.": "Änderungen, während das Mischpult nicht antwortete: sie sind nicht angekommen. Synchronisation Mischpult → PC erneut ausführen; Klick zum Ausblenden.",
- "{p0} non inviate": "{p0} nicht gesendet"
+ "{p0} non inviate": "{p0} nicht gesendet",
+ "Impostazioni esportate: {p0}": "Einstellungen exportiert: {p0}",
+ "Impostazioni non importate: il file non è leggibile.": "Einstellungen nicht importiert: die Datei ist nicht lesbar.",
+ "Impostazioni importate.": "Einstellungen importiert.",
+ "Impostazioni importate; alcuni valori non validi sono rimasti quelli predefiniti.": "Einstellungen importiert; einige ungültige Werte behalten ihren Standardwert.",
+ "Importa le impostazioni": "Einstellungen importieren",
+ "File nella cartella {p0} (per portarle da un altro PC copia qui il file esportato):": "Dateien im Ordner {p0} (um sie von einem anderen PC zu übernehmen, kopiere die exportierte Datei hierher):",
+ "Nessun file di impostazioni.": "Keine Einstellungsdatei.",
+ "Apri la cartella": "Ordner öffnen",
+ "Impostazioni su file": "Einstellungen als Datei",
+ "Aspetto, colori, barra rapida, layer utente, scorciatoie e preferenze, per un altro PC o come copia. L’indirizzo del mixer resta quello di questo PC.": "Aussehen, Farben, Schnellleiste, Benutzer-Layer, Tastenkürzel und Einstellungen, für einen anderen PC oder als Kopie. Die Mischpult-Adresse bleibt die dieses PCs.",
+ "Esporta": "Exportieren",
+ "Importa…": "Importieren…"
 }

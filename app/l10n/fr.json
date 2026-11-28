@@ -737,5 +737,17 @@
  "Sincronizzazione…": "Synchronisation…",
  "Connessione…": "Connexion…",
  "Modifiche fatte mentre il mixer non rispondeva: non sono arrivate al mixer. Rifai la sincronizzazione Mixer → PC; clic per nascondere.": "Modifications faites pendant que la console ne répondait pas : elles ne lui sont pas parvenues. Refais la synchronisation Console → PC ; clic pour masquer.",
- "{p0} non inviate": "{p0} non envoyées"
+ "{p0} non inviate": "{p0} non envoyées",
+ "Impostazioni esportate: {p0}": "Réglages exportés : {p0}",
+ "Impostazioni non importate: il file non è leggibile.": "Réglages non importés : le fichier est illisible.",
+ "Impostazioni importate.": "Réglages importés.",
+ "Impostazioni importate; alcuni valori non validi sono rimasti quelli predefiniti.": "Réglages importés ; certaines valeurs non valides gardent leur valeur par défaut.",
+ "Importa le impostazioni": "Importer les réglages",
+ "File nella cartella {p0} (per portarle da un altro PC copia qui il file esportato):": "Fichiers du dossier {p0} (pour les reprendre d'un autre PC, copie ici le fichier exporté) :",
+ "Nessun file di impostazioni.": "Aucun fichier de réglages.",
+ "Apri la cartella": "Ouvrir le dossier",
+ "Impostazioni su file": "Réglages dans un fichier",
+ "Aspetto, colori, barra rapida, layer utente, scorciatoie e preferenze, per un altro PC o come copia. L’indirizzo del mixer resta quello di questo PC.": "Apparence, couleurs, barre rapide, calque utilisateur, raccourcis et préférences, pour un autre PC ou en copie. L'adresse de la console reste celle de ce PC.",
+ "Esporta": "Exporter",
+ "Importa…": "Importer…"
 }

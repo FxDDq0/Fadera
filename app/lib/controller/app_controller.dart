@@ -195,6 +195,37 @@ class AppController extends ChangeNotifier {
     noticeTick.value++;
   }
 
+  /// Esporta le impostazioni in `%APPDATA%\Fadera\impostazioni`; restituisce il file o null (errore segnalato).
+  File? exportSettings() {
+    try {
+      final f = prefs.exportSettings(appSubDir('impostazioni'));
+      log('I', 'impostazioni esportate: ${f.path}');
+      notify(tr('Impostazioni esportate: {p0}', {'p0': f.path}));
+      return f;
+    } on Object catch (e) {
+      log('E', 'esportazione delle impostazioni non riuscita: $e');
+      notify(tr('Esportazione non riuscita: {p0}', {'p0': e}));
+      return null;
+    }
+  }
+
+  /// Importa le impostazioni da [f] e le applica subito (tema, colori, lingua, pagine).
+  bool importSettings(File f) {
+    final problem = prefs.importSettings(f);
+    if (problem == 'file non leggibile' || problem == 'file non trovato') {
+      log('W', 'importazione di ${f.path}: $problem');
+      notify(tr('Impostazioni non importate: il file non è leggibile.'));
+      return false;
+    }
+    applyAppearance();
+    L10n.apply(prefs.language);
+    layer = _normalizeLayer(layer);
+    log('I', 'impostazioni importate da ${f.path}${problem != null ? ' ($problem)' : ''}');
+    notify(problem == null ? tr('Impostazioni importate.') : tr('Impostazioni importate; alcuni valori non validi sono rimasti quelli predefiniti.'));
+    notifyListeners();
+    return true;
+  }
+
   /// Cambia la lingua dell'interfaccia ('system' = lingua di Windows) e la salva.
   void setLanguage(String code) {
     prefs.language = code;

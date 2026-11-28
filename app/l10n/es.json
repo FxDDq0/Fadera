@@ -737,5 +737,17 @@
  "Sincronizzazione…": "Sincronizando…",
  "Connessione…": "Conectando…",
  "Modifiche fatte mentre il mixer non rispondeva: non sono arrivate al mixer. Rifai la sincronizzazione Mixer → PC; clic per nascondere.": "Cambios hechos mientras el mezclador no respondía: no le llegaron. Repite la sincronización Mezclador → PC; clic para ocultar.",
- "{p0} non inviate": "{p0} no enviados"
+ "{p0} non inviate": "{p0} no enviados",
+ "Impostazioni esportate: {p0}": "Configuración exportada: {p0}",
+ "Impostazioni non importate: il file non è leggibile.": "Configuración no importada: el archivo no se puede leer.",
+ "Impostazioni importate.": "Configuración importada.",
+ "Impostazioni importate; alcuni valori non validi sono rimasti quelli predefiniti.": "Configuración importada; algunos valores no válidos mantienen su valor predeterminado.",
+ "Importa le impostazioni": "Importar la configuración",
+ "File nella cartella {p0} (per portarle da un altro PC copia qui il file esportato):": "Archivos en la carpeta {p0} (para traerlos de otro PC, copia aquí el archivo exportado):",
+ "Nessun file di impostazioni.": "Ningún archivo de configuración.",
+ "Apri la cartella": "Abrir la carpeta",
+ "Impostazioni su file": "Configuración en archivo",
+ "Aspetto, colori, barra rapida, layer utente, scorciatoie e preferenze, per un altro PC o come copia. L’indirizzo del mixer resta quello di questo PC.": "Aspecto, colores, barra rápida, capa de usuario, atajos y preferencias, para otro PC o como copia. La dirección del mezclador sigue siendo la de este PC.",
+ "Esporta": "Exportar",
+ "Importa…": "Importar…"
 }
