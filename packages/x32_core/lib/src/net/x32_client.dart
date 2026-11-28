@@ -329,6 +329,7 @@ class X32Client {
   /// Si connette al mixer. Non simula mai il successo: senza una risposta
   /// `/status` reale entro i tentativi previsti lancia [ConnectException].
   Future<MixerInfo> connect(InternetAddress host, {int port = kX32Port, MixerInfo? known}) async {
+    if (_disposed) throw ConnectException('client già rilasciato');
     if (_link == LinkState.connected || _link == LinkState.syncing) await disconnect();
     _closing = false;
     _host = host;
@@ -343,6 +344,7 @@ class X32Client {
       } on TimeoutException {
         _log('W', 'nessuna risposta a /status da ${host.address} (tentativo ${i + 1}/$connectAttempts)');
       }
+      _abortIfClosed();
     }
     _statusWait = null;
     if (status == null) {
@@ -352,7 +354,9 @@ class X32Client {
     var info = known;
     if (info == null) {
       // Identità: /xinfo diretto (stesso formato della discovery).
-      info = await _queryInfo(host, port) ??
+      final queried = await _queryInfo(host, port);
+      _abortIfClosed();
+      info = queried ??
           MixerInfo(
               ip: cleanInfoText(status.length > 1 ? status[1] : host.address),
               name: cleanInfoText(status.length > 2 ? status[2] : '?'),
@@ -370,6 +374,15 @@ class X32Client {
   }
 
   Completer<MixerInfo?>? _infoWait;
+
+  /// Una disconnessione arrivata durante l'attesa annulla la connessione: niente sessione
+  /// (timer, iscrizioni) avviata su un client che nel frattempo è stato chiuso.
+  void _abortIfClosed() {
+    if (_closing || _disposed) {
+      _statusWait = null;
+      throw ConnectException('connessione annullata');
+    }
+  }
 
   Future<MixerInfo?> _queryInfo(InternetAddress host, int port) async {
     _infoWait = Completer<MixerInfo?>();
@@ -457,6 +470,9 @@ class X32Client {
     _keepAliveTimer = _meterTimer = _watchdog = null;
     queue.clear();
     _nodeWait?.completeError(ConnectException('disconnesso'));
+    // una connessione in attesa di risposta termina subito
+    if (_statusWait != null && !_statusWait!.isCompleted) _statusWait!.completeError(TimeoutException('disconnesso'));
+    if (_infoWait != null && !_infoWait!.isCompleted) _infoWait!.complete(null);
     _setLink(LinkState.disconnected);
     _mixer = null;
     // nessun comando può più partire da questo client (solo una nuova connect lo riapre)

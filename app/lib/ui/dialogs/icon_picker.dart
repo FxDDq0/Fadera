@@ -52,7 +52,8 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
     final ctl = widget.ctl;
     final c = ctl.client;
     final id = _choice;
-    if (c == null || !ctl.isOnline || id == null) return;
+    // un invio alla volta: due clic ravvicinati non si sovrappongono (timer e ascolto condivisi)
+    if (c == null || !ctl.isOnline || id == null || _status == _Status.sending) return;
     setState(() {
       _status = _Status.sending;
       _readBack = null;
@@ -87,6 +88,7 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
       setState(() => _status = _Status.timeout);
       return;
     }
+    _timer?.cancel();
     _timer = Timer(const Duration(seconds: 2), () {
       _sub?.cancel();
       if (mounted && _status == _Status.sending) setState(() => _status = _Status.timeout);

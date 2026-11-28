@@ -513,12 +513,14 @@ class AppController extends ChangeNotifier {
   /// Si connette; il risultato è vero solo con una risposta reale del mixer.
   Future<MixerInfo> connect(String host, {int port = kX32Port}) async {
     // connessioni serializzate: un doppio clic o una riconnessione non lasciano client orfani
+    // l'epoca si legge subito: una disconnessione chiesta da qui in poi annulla questa connessione
+    final epoch = _epoch;
     final previous = _connecting;
     final mine = Completer<void>();
     _connecting = mine.future;
     try {
       await previous;
-      return await _connectNow(host, port);
+      return await _connectNow(host, port, epoch);
     } finally {
       mine.complete();
     }
@@ -526,11 +528,29 @@ class AppController extends ChangeNotifier {
 
   Future<void>? _connecting;
 
-  Future<MixerInfo> _connectNow(String host, int port) async {
-    await disconnect();
-    _undo.clear();
+  /// Cambia a ogni disconnessione richiesta dall'utente e a dispose: una connessione partita
+  /// prima la riconosce e si annulla, invece di collegarsi comunque.
+  int _epoch = 0;
+
+  void _checkEpoch(int epoch, [X32Client? created]) {
+    if (epoch != _epoch || _disposed) {
+      created?.dispose();
+      throw ConnectException('connessione annullata');
+    }
+  }
+
+  Future<MixerInfo> _connectNow(String host, int port, int epoch) async {
+    _checkEpoch(epoch);
+    clearUndo();
+    await _disconnectNow();
+    _checkEpoch(epoch);
     final addr = (await InternetAddress.lookup(host)).firstWhere((a) => a.type == InternetAddressType.IPv4);
+    _checkEpoch(epoch);
     final t = await UdpTransport.bind();
+    if (epoch != _epoch || _disposed) {
+      await t.close();
+      throw ConnectException('connessione annullata');
+    }
     final c = X32Client(transport: t, state: state)..autoReconnect = prefs.autoReconnect;
     _client = c;
     _linkSub = c.linkChanges.listen((s) {
@@ -552,6 +572,8 @@ class AppController extends ChangeNotifier {
     _nodeSub = c.nodeLines.listen(_onNodeLine);
     try {
       final info = await c.connect(addr, port: port);
+      _checkEpoch(epoch);
+      if (!identical(_client, c)) throw ConnectException('connessione annullata');
       prefs.lastHost = host;
       prefs.save();
       c.subscribeMeters(0);
@@ -560,12 +582,22 @@ class AppController extends ChangeNotifier {
       notifyListeners();
       return info;
     } on Object {
-      await disconnect();
+      if (identical(_client, c)) {
+        await _disconnectNow();
+      } else {
+        await c.dispose();
+      }
       rethrow;
     }
   }
 
+  /// Disconnessione richiesta dall'esterno: annulla anche una connessione ancora in corso.
   Future<void> disconnect() async {
+    _epoch++;
+    await _disconnectNow();
+  }
+
+  Future<void> _disconnectNow() async {
     final c = _client;
     _client = null;
     for (final s in [_linkSub, _meterSub, _logSub, _soloSub, _selSub, _nodeSub]) {
@@ -703,7 +735,7 @@ class AppController extends ChangeNotifier {
     final f = _logFile;
     if (f == null) return;
     final line = e.toString();
-    _logBytes += line.length + 2;
+    _logBytes += utf8.encode(line).length + 2;
     if (_logBytes > maxLogFileBytes) {
       f.writeln('${DateTime.now().toIso8601String()} [W] registro del giorno oltre ${maxLogFileBytes ~/ (1024 * 1024)} MB: scrittura su disco sospesa (resta in Diagnostica)');
       _logFile = null;
@@ -741,11 +773,15 @@ class AppController extends ChangeNotifier {
     panelTab.dispose();
     panelRequest.dispose();
     noticeTick.dispose();
+    _epoch++;
     final log = _logFile;
     _logFile = null;
     () async {
-      await c?.dispose();
-      await log?.close();
+      try {
+        await c?.dispose();
+      } finally {
+        await log?.close();
+      }
     }();
     super.dispose();
   }

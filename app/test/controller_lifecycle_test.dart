@@ -41,6 +41,26 @@ void main() {
     ctl.dispose();
   });
 
+  test('disconnessione durante una connessione in corso: alla fine nessun collegamento e nessun client', () async {
+    final ctl = AppController(prefs: Prefs()..persistent = false);
+    // l'esito si raccoglie subito, come fa l'interfaccia che attende la connessione
+    final pending = ctl.connect('127.0.0.1', port: sim.port).then<Object?>((_) => null, onError: (Object e) => e);
+    await ctl.disconnect();
+    final error = await pending;
+    expect(error, isA<ConnectException>());
+    expect(ctl.client, isNull);
+    expect(ctl.isOnline, isFalse);
+    ctl.dispose();
+  });
+
+  test('dispose durante una connessione in corso: il client creato viene rilasciato', () async {
+    final ctl = AppController(prefs: Prefs()..persistent = false);
+    final pending = ctl.connect('127.0.0.1', port: sim.port).then((_) {}, onError: (_) {});
+    ctl.dispose();
+    await pending;
+    expect(ctl.client, isNull);
+  });
+
   test('tipo di effetto cambiato dal mixer: i parametri vengono riletti (tappa 2.6)', () async {
     final ctl = AppController(prefs: Prefs()..persistent = false);
     await ctl.connect('127.0.0.1', port: sim.port);
