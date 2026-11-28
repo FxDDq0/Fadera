@@ -33,7 +33,14 @@ class ChannelStrip extends StatelessWidget {
         final inverted = AppColors.stripInverted(colorIdx);
         final narrow = width < 70;
         final wide = width >= 100;
-        return GestureDetector(
+        // screen reader: la strip si annuncia con nome e sigla, e se è selezionata
+        return Semantics(
+          container: true,
+          button: true,
+          selected: ctl.selected == s,
+          label: '${ctl.stripName(s)}, ${s.label}',
+          onTap: () => ctl.select(s),
+          child: GestureDetector(
           onTap: () {
             ctl.select(s);
             if (ctl.assignMode) addQuickControl(context, ctl);
@@ -94,6 +101,7 @@ class ChannelStrip extends StatelessWidget {
                 ),
               ),
             ]),
+          ),
           ),
         );
       },

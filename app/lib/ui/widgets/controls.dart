@@ -18,7 +18,14 @@ import '../../l10n/l10n.dart';
 /// La scala dB non è disegnata qui: è il widget [FaderScale], in una colonna separata,
 /// così meter, scala e fader non si sovrappongono mai.
 class Fader extends StatefulWidget {
-  const Fader({super.key, required this.ctl, required this.path, this.accent, this.capGap = 4, this.capMax = 42});
+  const Fader({
+    super.key,
+    required this.ctl,
+    required this.path,
+    this.accent,
+    this.capGap = 4,
+    this.capMax = 42,
+  });
   final AppController ctl;
   final String path;
   final Color? accent;
@@ -58,10 +65,13 @@ class _FaderState extends State<Fader> {
     widget.ctl.setIdx(widget.path, s.clampIdx(idx));
   }
 
-  int get _zeroDbIdx => _spec?.kind == ParamKind.level ? levelDbToIdx(0, _spec!.steps) : (_spec?.steps ?? 0) ~/ 2;
+  int get _zeroDbIdx => _spec?.kind == ParamKind.level
+      ? levelDbToIdx(0, _spec!.steps)
+      : (_spec?.steps ?? 0) ~/ 2;
 
   KeyEventResult _onKey(FocusNode n, KeyEvent e) {
-    if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
+    if (e is! KeyDownEvent && e is! KeyRepeatEvent)
+      return KeyEventResult.ignored;
     final cur = widget.ctl.idx(widget.path) ?? 0;
     final big = HardwareKeyboard.instance.isShiftPressed ? 1 : 10;
     switch (e.logicalKey) {
@@ -93,58 +103,85 @@ class _FaderState extends State<Fader> {
       builder: (context, v, _) {
         final idx = _dragIdx ?? (v as int? ?? 0);
         final frac = spec.fraction(idx);
-        return Focus(
-          focusNode: _focus,
-          onKeyEvent: _onKey,
-          onFocusChange: (_) => setState(() {}),
-          child: MouseRegion(
-            cursor: SystemMouseCursors.resizeUpDown,
-            onEnter: (_) => setState(() => _hover = true),
-            onExit: (_) => setState(() => _hover = false),
-            child: LayoutBuilder(
-              builder: (context, c) {
-                final travel = math.max(1.0, c.maxHeight - Fader.thumbHeight);
-                return GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onDoubleTap: () => _set(_zeroDbIdx),
-                  onVerticalDragStart: (d) {
-                    _focus.requestFocus();
-                    setState(() {
-                      _dragFrac = frac;
-                      _dragIdx = idx;
-                    });
-                  },
-                  onVerticalDragUpdate: (d) {
-                    final fine = HardwareKeyboard.instance.isShiftPressed || HardwareKeyboard.instance.isControlPressed;
-                    _dragFrac = (_dragFrac - d.delta.dy / travel * (fine ? 0.1 : 1)).clamp(0.0, 1.0);
-                    final ni = spec.idxFromFraction(_dragFrac);
-                    if (ni != _dragIdx) {
-                      setState(() => _dragIdx = ni);
-                      _set(ni);
-                    }
-                  },
-                  onVerticalDragEnd: (_) => setState(() => _dragIdx = null),
-                  onVerticalDragCancel: () => setState(() => _dragIdx = null),
-                  onTapDown: (d) => _focus.requestFocus(),
-                  child: CustomPaint(
-                    painter: _FaderPainter(
-                      frac: frac,
-                      zeroFrac: spec.kind == ParamKind.level ? spec.fraction(levelDbToIdx(0, spec.steps)) : null,
-                      accent: accent,
-                      focused: _focus.hasFocus,
-                      active: _dragIdx != null || _hover,
-                      capGap: widget.capGap,
-                      capMax: widget.capMax,
+        // screen reader: cursore con il nome della strip e il valore; su/giù di circa l'1 %
+        final step = math.max(1, spec.steps ~/ 100);
+        return Semantics(
+          container: true,
+          slider: true,
+          label: _semanticLabel(),
+          value: spec.display(idx),
+          increasedValue: spec.display(spec.clampIdx(idx + step)),
+          decreasedValue: spec.display(spec.clampIdx(idx - step)),
+          onIncrease: () => _set(idx + step),
+          onDecrease: () => _set(idx - step),
+          child: Focus(
+            focusNode: _focus,
+            onKeyEvent: _onKey,
+            onFocusChange: (_) => setState(() {}),
+            child: MouseRegion(
+              cursor: SystemMouseCursors.resizeUpDown,
+              onEnter: (_) => setState(() => _hover = true),
+              onExit: (_) => setState(() => _hover = false),
+              child: LayoutBuilder(
+                builder: (context, c) {
+                  final travel = math.max(1.0, c.maxHeight - Fader.thumbHeight);
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onDoubleTap: () => _set(_zeroDbIdx),
+                    onVerticalDragStart: (d) {
+                      _focus.requestFocus();
+                      setState(() {
+                        _dragFrac = frac;
+                        _dragIdx = idx;
+                      });
+                    },
+                    onVerticalDragUpdate: (d) {
+                      final fine =
+                          HardwareKeyboard.instance.isShiftPressed ||
+                          HardwareKeyboard.instance.isControlPressed;
+                      _dragFrac =
+                          (_dragFrac - d.delta.dy / travel * (fine ? 0.1 : 1))
+                              .clamp(0.0, 1.0);
+                      final ni = spec.idxFromFraction(_dragFrac);
+                      if (ni != _dragIdx) {
+                        setState(() => _dragIdx = ni);
+                        _set(ni);
+                      }
+                    },
+                    onVerticalDragEnd: (_) => setState(() => _dragIdx = null),
+                    onVerticalDragCancel: () => setState(() => _dragIdx = null),
+                    onTapDown: (d) => _focus.requestFocus(),
+                    child: CustomPaint(
+                      painter: _FaderPainter(
+                        frac: frac,
+                        zeroFrac: spec.kind == ParamKind.level
+                            ? spec.fraction(levelDbToIdx(0, spec.steps))
+                            : null,
+                        accent: accent,
+                        focused: _focus.hasFocus,
+                        active: _dragIdx != null || _hover,
+                        capGap: widget.capGap,
+                        capMax: widget.capMax,
+                      ),
+                      size: Size(c.maxWidth, c.maxHeight),
                     ),
-                    size: Size(c.maxWidth, c.maxHeight),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
         );
       },
     );
+  }
+
+  /// "Fader Kick" (nome della strip dal mixer) oppure il percorso se non è una strip.
+  String _semanticLabel() {
+    final p = widget.path;
+    final parts = p.split('/');
+    final base = parts.length >= 3 ? '/${parts[1]}/${parts[2]}' : p;
+    final s = AppController.parseStrip(base);
+    return tr('Fader {p0}', {'p0': s == null ? p : widget.ctl.stripName(s)});
   }
 }
 
@@ -175,7 +212,10 @@ class _FaderPainter extends CustomPainter {
 
     // binario incavato
     const tw = 6.0;
-    final track = RRect.fromRectAndRadius(Rect.fromLTWH(cx - tw / 2, top - 2, tw, travel + 4), const Radius.circular(3));
+    final track = RRect.fromRectAndRadius(
+      Rect.fromLTWH(cx - tw / 2, top - 2, tw, travel + 4),
+      const Radius.circular(3),
+    );
     canvas.drawRRect(track, Paint()..color = AppColors.well);
     canvas.drawRRect(
       track,
@@ -185,7 +225,10 @@ class _FaderPainter extends CustomPainter {
     );
     // riempimento nel colore della strip, dal fondo al cursore
     final y = yOf(frac);
-    final filled = RRect.fromRectAndRadius(Rect.fromLTRB(cx - 1.5, y, cx + 1.5, top + travel), const Radius.circular(2));
+    final filled = RRect.fromRectAndRadius(
+      Rect.fromLTRB(cx - 1.5, y, cx + 1.5, top + travel),
+      const Radius.circular(2),
+    );
     canvas.drawRRect(filled, Paint()..color = accent.withValues(alpha: 0.75));
     // tacca dello 0 dB ai lati del binario
     if (zeroFrac != null) {
@@ -193,28 +236,48 @@ class _FaderPainter extends CustomPainter {
       final p = Paint()
         ..color = AppColors.textDim
         ..strokeWidth = 1.2;
-      canvas.drawLine(Offset(cx - tw / 2 - 5, zy), Offset(cx - tw / 2 - 1, zy), p);
-      canvas.drawLine(Offset(cx + tw / 2 + 1, zy), Offset(cx + tw / 2 + 5, zy), p);
+      canvas.drawLine(
+        Offset(cx - tw / 2 - 5, zy),
+        Offset(cx - tw / 2 - 1, zy),
+        p,
+      );
+      canvas.drawLine(
+        Offset(cx + tw / 2 + 1, zy),
+        Offset(cx + tw / 2 + 5, zy),
+        p,
+      );
     }
     // cursore: corpo chiaro, linea centrale nel colore della strip, righe di presa
     final cw = math.min(MxDensity.s(capMax), size.width - capGap);
     final ch = Fader.thumbHeight * 0.74;
-    final thumb = RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(cx, y), width: cw, height: ch), const Radius.circular(4));
-    canvas.drawRRect(thumb.shift(const Offset(0, 2)), Paint()..color = const Color(0x99000000));
+    final thumb = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: Offset(cx, y), width: cw, height: ch),
+      const Radius.circular(4),
+    );
+    canvas.drawRRect(
+      thumb.shift(const Offset(0, 2)),
+      Paint()..color = const Color(0x99000000),
+    );
     canvas.drawRRect(
       thumb,
       Paint()
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: active ? const [Color(0xFFF4F6FA), Color(0xFFC3C9D3)] : const [Color(0xFFE2E6EC), Color(0xFFAEB5C1)],
+          colors: active
+              ? const [Color(0xFFF4F6FA), Color(0xFFC3C9D3)]
+              : const [Color(0xFFE2E6EC), Color(0xFFAEB5C1)],
         ).createShader(thumb.outerRect),
     );
     final grip = Paint()
       ..color = const Color(0x33000000)
       ..strokeWidth = 1;
     for (final dy in [-7.0, -4.0, 4.0, 7.0]) {
-      canvas.drawLine(Offset(thumb.left + 5, y + dy), Offset(thumb.right - 5, y + dy), grip);
+      canvas.drawLine(
+        Offset(thumb.left + 5, y + dy),
+        Offset(thumb.right - 5, y + dy),
+        grip,
+      );
     }
     canvas.drawLine(
       Offset(thumb.left + 3, y),
@@ -235,13 +298,23 @@ class _FaderPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_FaderPainter o) => o.frac != frac || o.accent != accent || o.focused != focused || o.active != active || o.zeroFrac != zeroFrac;
+  bool shouldRepaint(_FaderPainter o) =>
+      o.frac != frac ||
+      o.accent != accent ||
+      o.focused != focused ||
+      o.active != active ||
+      o.zeroFrac != zeroFrac;
 }
 
 /// Scala dB del fader, in una colonna propria accanto al binario. Le tacche usano la
 /// stessa curva del fader (indice → posizione), quindi sono allineate al cursore.
 class FaderScale extends StatelessWidget {
-  const FaderScale({super.key, required this.spec, this.dense = false, this.large = false});
+  const FaderScale({
+    super.key,
+    required this.spec,
+    this.dense = false,
+    this.large = false,
+  });
   final ParamSpec spec;
 
   /// Etichette più grandi (strip larghe, master).
@@ -251,7 +324,10 @@ class FaderScale extends StatelessWidget {
   final bool dense;
 
   @override
-  Widget build(BuildContext context) => CustomPaint(painter: _ScalePainter(spec, dense, large), size: Size.infinite);
+  Widget build(BuildContext context) => CustomPaint(
+    painter: _ScalePainter(spec, dense, large),
+    size: Size.infinite,
+  );
 }
 
 class _ScalePainter extends CustomPainter {
@@ -274,7 +350,11 @@ class _ScalePainter extends CustomPainter {
       final f = spec.fraction(levelDbToIdx(db.toDouble(), spec.steps));
       final y = top + (1 - f) * travel;
       final zero = db == 0;
-      canvas.drawLine(Offset(size.width - 3, y), Offset(size.width, y), Paint()..color = zero ? AppColors.textDim : AppColors.textFaint);
+      canvas.drawLine(
+        Offset(size.width - 3, y),
+        Offset(size.width, y),
+        Paint()..color = zero ? AppColors.textDim : AppColors.textFaint,
+      );
       tp.text = TextSpan(
         text: db > 0 ? '+$db' : '$db',
         style: TextStyle(
@@ -286,12 +366,16 @@ class _ScalePainter extends CustomPainter {
         ),
       );
       tp.layout();
-      tp.paint(canvas, Offset(math.max(0, size.width - 4 - tp.width), y - tp.height / 2));
+      tp.paint(
+        canvas,
+        Offset(math.max(0, size.width - 4 - tp.width), y - tp.height / 2),
+      );
     }
   }
 
   @override
-  bool shouldRepaint(_ScalePainter o) => o.spec != spec || o.dense != dense || o.large != large;
+  bool shouldRepaint(_ScalePainter o) =>
+      o.spec != spec || o.dense != dense || o.large != large;
 }
 
 // =============================================================== METER
@@ -330,7 +414,13 @@ class MeterClock extends ChangeNotifier {
 /// Meter verticale a segmenti con picco e indicatore di clip in alto.
 /// Scala propria in dBFS (−60…0), indipendente dalla scala del fader.
 class LevelMeter extends StatefulWidget {
-  const LevelMeter({super.key, required this.read, required this.clock, this.width = 6, this.available = true});
+  const LevelMeter({
+    super.key,
+    required this.read,
+    required this.clock,
+    this.width = 6,
+    this.available = true,
+  });
   final double Function() read;
   final MeterClock clock;
   final double width;
@@ -356,7 +446,10 @@ abstract final class MeterSettings {
   /// Cambia a ogni modifica: i meter ricreano la propria dinamica.
   static int version = 0;
 
-  static MeterBallistics ballistics() => MeterBallistics(fallDbPerSecond: fallDbPerSecond, peakHoldMs: peakHoldMs < 0 ? 1 << 30 : math.max(peakHoldMs, 1));
+  static MeterBallistics ballistics() => MeterBallistics(
+    fallDbPerSecond: fallDbPerSecond,
+    peakHoldMs: peakHoldMs < 0 ? 1 << 30 : math.max(peakHoldMs, 1),
+  );
 }
 
 class _LevelMeterState extends State<LevelMeter> {
@@ -375,14 +468,19 @@ class _LevelMeterState extends State<LevelMeter> {
   Widget build(BuildContext context) {
     return Tooltip(
       message: widget.available
-          ? tr('Meter in dBFS (−60…0), tacche a 0, −6, −12, −18, −30, −40. In alto il clip: resta acceso finché non tocchi il meter. La scala accanto è quella del fader.')
+          ? tr(
+              'Meter in dBFS (−60…0), tacche a 0, −6, −12, −18, −30, −40. In alto il clip: resta acceso finché non tocchi il meter. La scala accanto è quella del fader.',
+            )
           : tr('Meter spento: posizione nel banco meter non verificata.'),
       waitDuration: const Duration(milliseconds: 900),
       child: GestureDetector(
         // tocco: azzera clip e picco tenuto
         onTap: widget.available ? () => _b = MeterSettings.ballistics() : null,
         child: RepaintBoundary(
-          child: CustomPaint(size: Size(widget.width, double.infinity), painter: _MeterPainter(this, widget.clock)),
+          child: CustomPaint(
+            size: Size(widget.width, double.infinity),
+            painter: _MeterPainter(this, widget.clock),
+          ),
         ),
       ),
     );
@@ -397,8 +495,10 @@ class _MeterPainter extends CustomPainter {
   static Rect? _shaderRect;
   static Shader? _shader;
   static final _wellPaint = Paint()..color = AppColors.well;
-  static final _gapPaint = Paint()..color = AppColors.well.withValues(alpha: 0.85);
-  static final _tickPaint = Paint()..color = AppColors.textFaint.withValues(alpha: 0.6);
+  static final _gapPaint = Paint()
+    ..color = AppColors.well.withValues(alpha: 0.85);
+  static final _tickPaint = Paint()
+    ..color = AppColors.textFaint.withValues(alpha: 0.6);
 
   static Shader _shaderFor(Rect body) {
     if (_shader == null || _shaderRect != body) {
@@ -406,7 +506,12 @@ class _MeterPainter extends CustomPainter {
       _shader = LinearGradient(
         begin: Alignment.bottomCenter,
         end: Alignment.topCenter,
-        colors: const [AppColors.meterLow, AppColors.meterLow, AppColors.meterMid, AppColors.meterHigh],
+        colors: const [
+          AppColors.meterLow,
+          AppColors.meterLow,
+          AppColors.meterMid,
+          AppColors.meterHigh,
+        ],
         stops: [0, frac(-12), frac(-4), 1],
       ).createShader(body);
     }
@@ -422,9 +527,20 @@ class _MeterPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final body = Rect.fromLTWH(0, _clipH + 2, size.width, math.max(0, size.height - _clipH - 2));
-    canvas.drawRRect(RRect.fromRectAndRadius(body, const Radius.circular(2)), _wellPaint);
-    final clip = RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, size.width, _clipH), const Radius.circular(1));
+    final body = Rect.fromLTWH(
+      0,
+      _clipH + 2,
+      size.width,
+      math.max(0, size.height - _clipH - 2),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(body, const Radius.circular(2)),
+      _wellPaint,
+    );
+    final clip = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, _clipH),
+      const Radius.circular(1),
+    );
     if (!s.widget.available) {
       canvas.drawRRect(clip, _wellPaint);
       return;
@@ -434,7 +550,12 @@ class _MeterPainter extends CustomPainter {
       ..tick(s.widget.clock.dtMs);
     final f = frac(b.level);
     if (f > 0) {
-      final rect = Rect.fromLTRB(body.left + 1, body.top + body.height * (1 - f), body.right - 1, body.bottom);
+      final rect = Rect.fromLTRB(
+        body.left + 1,
+        body.top + body.height * (1 - f),
+        body.right - 1,
+        body.bottom,
+      );
       canvas.drawRect(rect, Paint()..shader = _shaderFor(body));
       // segmenti: righe scure ogni 3 px, in un unico tracciato (un solo comando di disegno)
       final gaps = Path();
@@ -447,19 +568,28 @@ class _MeterPainter extends CustomPainter {
     for (final db in const [0, -6, -12, -18, -30, -40]) {
       final y = body.top + body.height * (1 - frac(db.toDouble()));
       final major = db == 0 || db == -18;
-      canvas.drawRect(Rect.fromLTWH(body.right - (major ? 3 : 2), y, major ? 3 : 2, 1), _tickPaint);
+      canvas.drawRect(
+        Rect.fromLTWH(body.right - (major ? 3 : 2), y, major ? 3 : 2, 1),
+        _tickPaint,
+      );
     }
     final pf = frac(b.peak);
     if (MeterSettings.peakHoldMs != 0 && pf > 0.01) {
       final y = body.top + body.height * (1 - pf);
       canvas.drawRect(
         Rect.fromLTWH(body.left + 1, y, body.width - 2, 1.5),
-        Paint()..color = b.peak > -6 ? AppColors.meterHigh : AppColors.text.withValues(alpha: 0.85),
+        Paint()
+          ..color = b.peak > -6
+              ? AppColors.meterHigh
+              : AppColors.text.withValues(alpha: 0.85),
       );
     }
     // indicatore di clip (picco sopra −0,5 dBFS)
     // clip tenuto: resta acceso finché l'utente non tocca il meter
-    canvas.drawRRect(clip, Paint()..color = b.clip ? AppColors.meterHigh : AppColors.surface3);
+    canvas.drawRRect(
+      clip,
+      Paint()..color = b.clip ? AppColors.meterHigh : AppColors.surface3,
+    );
   }
 
   @override
@@ -515,7 +645,8 @@ class _KnobState extends State<Knob> {
   /// Tastiera (dopo un clic sulla manopola): frecce = un passo, Pag su/giù = 10 passi,
   /// Inizio = valore predefinito.
   KeyEventResult _onKey(FocusNode n, KeyEvent e, ParamSpec spec, int idx) {
-    if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
+    if (e is! KeyDownEvent && e is! KeyRepeatEvent)
+      return KeyEventResult.ignored;
     int? to;
     switch (e.logicalKey) {
       case LogicalKeyboardKey.arrowUp || LogicalKeyboardKey.arrowRight:
@@ -547,54 +678,107 @@ class _KnobState extends State<Knob> {
         final idx = v as int? ?? 0;
         final text = widget.valueText != null
             ? widget.valueText!(spec.physical(idx))
-            : (widget.compact ? spec.display(idx).replaceAll(' ', '') : spec.display(idx));
+            : (widget.compact
+                  ? spec.display(idx).replaceAll(' ', '')
+                  : spec.display(idx));
         return SizedBox(
           width: widget.compact ? size + 12 : math.max(size + 16, 60),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(widget.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Tx.label),
+              Text(
+                widget.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Tx.label,
+              ),
               const SizedBox(height: Sp.xs),
-              Focus(
-                focusNode: _focus,
-                onKeyEvent: (n, e) => _onKey(n, e, spec, idx),
-                onFocusChange: (_) => setState(() {}),
-                child: GestureDetector(
-                  onTapDown: (_) => _focus.requestFocus(),
-                  onDoubleTap: widget.defaultIdx == null ? null : () => widget.ctl.setIdx(widget.path, widget.defaultIdx!),
-                  onVerticalDragStart: (_) => setState(() {
-                    _focus.requestFocus();
-                    _acc = spec.fraction(idx);
-                    _active = true;
-                  }),
-                  onVerticalDragEnd: (_) => setState(() => _active = false),
-                  onVerticalDragCancel: () => setState(() => _active = false),
-                  onVerticalDragUpdate: (d) {
-                    final fine = HardwareKeyboard.instance.isShiftPressed;
-                    _acc = (_acc - d.delta.dy / (fine ? 1500 : 180)).clamp(0.0, 1.0);
-                    widget.ctl.setIdx(widget.path, spec.idxFromFraction(_acc));
-                  },
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.resizeUpDown,
-                    child: CustomPaint(size: Size.square(size), painter: _KnobPainter(spec.fraction(idx), color, widget.bipolar, _active || _focus.hasFocus)),
+              Semantics(
+                container: true,
+                slider: true,
+                label: widget.label,
+                value: text,
+                increasedValue: spec.display(spec.clampIdx(idx + math.max(1, spec.steps ~/ 100))),
+                decreasedValue: spec.display(spec.clampIdx(idx - math.max(1, spec.steps ~/ 100))),
+                onIncrease: () => widget.ctl.setIdx(
+                  widget.path,
+                  spec.clampIdx(idx + math.max(1, spec.steps ~/ 100)),
+                ),
+                onDecrease: () => widget.ctl.setIdx(
+                  widget.path,
+                  spec.clampIdx(idx - math.max(1, spec.steps ~/ 100)),
+                ),
+                child: Focus(
+                  focusNode: _focus,
+                  onKeyEvent: (n, e) => _onKey(n, e, spec, idx),
+                  onFocusChange: (_) => setState(() {}),
+                  child: GestureDetector(
+                    onTapDown: (_) => _focus.requestFocus(),
+                    onDoubleTap: widget.defaultIdx == null
+                        ? null
+                        : () => widget.ctl.setIdx(
+                            widget.path,
+                            widget.defaultIdx!,
+                          ),
+                    onVerticalDragStart: (_) => setState(() {
+                      _focus.requestFocus();
+                      _acc = spec.fraction(idx);
+                      _active = true;
+                    }),
+                    onVerticalDragEnd: (_) => setState(() => _active = false),
+                    onVerticalDragCancel: () => setState(() => _active = false),
+                    onVerticalDragUpdate: (d) {
+                      final fine = HardwareKeyboard.instance.isShiftPressed;
+                      _acc = (_acc - d.delta.dy / (fine ? 1500 : 180)).clamp(
+                        0.0,
+                        1.0,
+                      );
+                      widget.ctl.setIdx(
+                        widget.path,
+                        spec.idxFromFraction(_acc),
+                      );
+                    },
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.resizeUpDown,
+                      child: CustomPaint(
+                        size: Size.square(size),
+                        painter: _KnobPainter(
+                          spec.fraction(idx),
+                          color,
+                          widget.bipolar,
+                          _active || _focus.hasFocus,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: Sp.xs),
               // clic sul valore: inserimento numerico
               Tooltip(
-                message: tr('Clic per digitare il valore · frecce: un passo · Pag su/giù: 10 passi'),
+                message: tr(
+                  'Clic per digitare il valore · frecce: un passo · Pag su/giù: 10 passi',
+                ),
                 waitDuration: const Duration(milliseconds: 900),
                 child: InkWell(
                   borderRadius: Rd.brS,
-                  onTap: () => editValue(context, widget.ctl, widget.path, widget.label),
+                  onTap: () =>
+                      editValue(context, widget.ctl, widget.path, widget.label),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 3,
+                      vertical: 1,
+                    ),
                     child: Text(
                       text,
                       maxLines: 1,
                       overflow: TextOverflow.clip,
-                      style: Tx.value.copyWith(fontSize: widget.compact ? 10.5 : 11.5, color: _active || _focus.hasFocus ? AppColors.text : AppColors.textDim),
+                      style: Tx.value.copyWith(
+                        fontSize: widget.compact ? 10.5 : 11.5,
+                        color: _active || _focus.hasFocus
+                            ? AppColors.text
+                            : AppColors.textDim,
+                      ),
                     ),
                   ),
                 ),
@@ -624,7 +808,13 @@ class _KnobPainter extends CustomPainter {
       ..strokeWidth = 3.5
       ..strokeCap = StrokeCap.round
       ..color = AppColors.surface3;
-    canvas.drawArc(Rect.fromCircle(center: c, radius: r), start, sweep, false, ring);
+    canvas.drawArc(
+      Rect.fromCircle(center: c, radius: r),
+      start,
+      sweep,
+      false,
+      ring,
+    );
     if (bipolar) {
       // tacca del centro
       final top = c + const Offset(0, -1) * (r + 3);
@@ -639,17 +829,29 @@ class _KnobPainter extends CustomPainter {
     final from = bipolar ? start + sweep / 2 : start;
     final to = start + sweep * f;
     if ((to - from).abs() > 0.001) {
-      canvas.drawArc(Rect.fromCircle(center: c, radius: r), math.min(from, to), (to - from).abs(), false, ring..color = color);
+      canvas.drawArc(
+        Rect.fromCircle(center: c, radius: r),
+        math.min(from, to),
+        (to - from).abs(),
+        false,
+        ring..color = color,
+      );
     }
     // corpo della manopola
     final body = r - 5;
-    canvas.drawCircle(c + const Offset(0, 1.5), body, Paint()..color = const Color(0x80000000));
+    canvas.drawCircle(
+      c + const Offset(0, 1.5),
+      body,
+      Paint()..color = const Color(0x80000000),
+    );
     canvas.drawCircle(
       c,
       body,
       Paint()
         ..shader = RadialGradient(
-          colors: active ? const [Color(0xFF3A4251), Color(0xFF262C37)] : const [Color(0xFF323946), Color(0xFF20252F)],
+          colors: active
+              ? const [Color(0xFF3A4251), Color(0xFF262C37)]
+              : const [Color(0xFF323946), Color(0xFF20252F)],
           center: const Alignment(-0.3, -0.4),
         ).createShader(Rect.fromCircle(center: c, radius: body)),
     );
@@ -673,7 +875,8 @@ class _KnobPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_KnobPainter o) => o.f != f || o.color != color || o.active != active;
+  bool shouldRepaint(_KnobPainter o) =>
+      o.f != f || o.color != color || o.active != active;
 }
 
 // ============================================================= PULSANTI
@@ -706,7 +909,14 @@ class ParamToggle extends StatelessWidget {
       valueListenable: ctl.hub.listen(path),
       builder: (context, v, _) {
         final on = invert ? (v == 0) : (v != null && v != 0);
-        return PillButton(label: label, active: on, activeColor: activeColor, onTap: () => ctl.toggle(path), width: width, height: height);
+        return PillButton(
+          label: label,
+          active: on,
+          activeColor: activeColor,
+          onTap: () => ctl.toggle(path),
+          width: width,
+          height: height,
+        );
       },
     );
   }
@@ -737,7 +947,9 @@ class PillButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ac = activeColor ?? AppColors.accent;
-    final fg = !enabled ? AppColors.textFaint : (active ? AppColors.onColor(ac) : AppColors.textDim);
+    final fg = !enabled
+        ? AppColors.textFaint
+        : (active ? AppColors.onColor(ac) : AppColors.textDim);
     return Opacity(
       opacity: enabled ? 1 : 0.5,
       child: Material(
@@ -749,7 +961,9 @@ class PillButton extends StatelessWidget {
           child: Container(
             width: width,
             height: MxDensity.s(height),
-            padding: EdgeInsets.symmetric(horizontal: width != null && width! < 60 ? 2 : Sp.s),
+            padding: EdgeInsets.symmetric(
+              horizontal: width != null && width! < 60 ? 2 : Sp.s,
+            ),
             alignment: Alignment.center,
             decoration: BoxDecoration(
               borderRadius: Rd.brS,
@@ -759,7 +973,10 @@ class PillButton extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (icon != null) ...[Icon(icon, size: 14, color: fg), if (label.isNotEmpty) const SizedBox(width: 4)],
+                if (icon != null) ...[
+                  Icon(icon, size: 14, color: fg),
+                  if (label.isNotEmpty) const SizedBox(width: 4),
+                ],
                 if (label.isNotEmpty)
                   // il testo si riduce invece di essere troncato (strip strette)
                   Flexible(
@@ -768,7 +985,12 @@ class PillButton extends StatelessWidget {
                       child: Text(
                         label,
                         maxLines: 1,
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.7, color: fg),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.7,
+                          color: fg,
+                        ),
                       ),
                     ),
                   ),
@@ -783,7 +1005,13 @@ class PillButton extends StatelessWidget {
 
 /// Selettore per un parametro enum (menu a tendina compatto).
 class ParamDropdown extends StatelessWidget {
-  const ParamDropdown({super.key, required this.ctl, required this.path, this.width = 110, this.labels});
+  const ParamDropdown({
+    super.key,
+    required this.ctl,
+    required this.path,
+    this.width = 110,
+    this.labels,
+  });
   final AppController ctl;
   final String path;
   final double width;
@@ -793,7 +1021,10 @@ class ParamDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final spec = ctl.state.specOf(path);
     if (spec == null) return const SizedBox();
-    final names = labels ?? spec.labels ?? [for (var i = spec.minIdx; i <= spec.steps; i++) '$i'];
+    final names =
+        labels ??
+        spec.labels ??
+        [for (var i = spec.minIdx; i <= spec.steps; i++) '$i'];
     return ValueListenableBuilder<Object?>(
       valueListenable: ctl.hub.listen(path),
       builder: (context, v, _) {
@@ -813,7 +1044,11 @@ class ParamDropdown extends StatelessWidget {
               isDense: true,
               value: idx.clamp(0, names.length - 1),
               dropdownColor: AppColors.surface2,
-              icon: const Icon(Icons.expand_more, size: 16, color: AppColors.textDim),
+              icon: const Icon(
+                Icons.expand_more,
+                size: 16,
+                color: AppColors.textDim,
+              ),
               style: const TextStyle(fontSize: 12, color: AppColors.text),
               items: [
                 for (var i = 0; i < names.length; i++)
@@ -822,7 +1057,8 @@ class ParamDropdown extends StatelessWidget {
                     child: Text(names[i], overflow: TextOverflow.ellipsis),
                   ),
               ],
-              onChanged: (i) => i == null ? null : ctl.setIdx(path, i + spec.minIdx),
+              onChanged: (i) =>
+                  i == null ? null : ctl.setIdx(path, i + spec.minIdx),
             ),
           ),
         );
@@ -843,7 +1079,12 @@ String panText(double v) {
 /// Pan (o bilanciamento del Main LR) sulla strip: barra orizzontale con tacca centrale,
 /// riempimento dal centro, valore. Trascina in orizzontale (Maiusc = fine), doppio clic = centro.
 class PanBar extends StatefulWidget {
-  const PanBar({super.key, required this.ctl, required this.strip, this.compact = false});
+  const PanBar({
+    super.key,
+    required this.ctl,
+    required this.strip,
+    this.compact = false,
+  });
   final AppController ctl;
   final StripRef strip;
   final bool compact;
@@ -859,7 +1100,8 @@ class _PanBarState extends State<PanBar> {
     final path = '${widget.strip.base}/mix/pan';
     final spec = widget.ctl.state.specOf(path);
     if (spec == null) return const SizedBox.shrink();
-    final balance = widget.strip.hasBalance || widget.ctl.isLinked(widget.strip);
+    final balance =
+        widget.strip.hasBalance || widget.ctl.isLinked(widget.strip);
     return ValueListenableBuilder<Object?>(
       valueListenable: widget.ctl.hub.listen(path),
       builder: (context, v, _) {
@@ -867,7 +1109,10 @@ class _PanBarState extends State<PanBar> {
         final f = spec.fraction(idx);
         final phys = widget.ctl.state.getPhysical(path) ?? 0;
         return Tooltip(
-          message: tr('{p0}: {p1}. Trascina in orizzontale (Maiusc = fine), doppio clic = centro.', {'p0': balance ? tr('Bilanciamento') : 'Pan', 'p1': panText(phys)}),
+          message: tr(
+            '{p0}: {p1}. Trascina in orizzontale (Maiusc = fine), doppio clic = centro.',
+            {'p0': balance ? tr('Bilanciamento') : 'Pan', 'p1': panText(phys)},
+          ),
           waitDuration: const Duration(milliseconds: 700),
           child: GestureDetector(
             onDoubleTap: () => widget.ctl.setIdx(path, spec.idxFromPhysical(0)),
@@ -891,12 +1136,20 @@ class _PanBarState extends State<PanBar> {
                         if (!compact) ...[
                           Text(
                             balance ? 'BAL' : 'PAN',
-                            style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, letterSpacing: 0.5, color: AppColors.textFaint),
+                            style: const TextStyle(
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                              color: AppColors.textFaint,
+                            ),
                           ),
                           const SizedBox(width: 4),
                         ],
                         Expanded(
-                          child: CustomPaint(painter: _PanPainter(f), size: Size.infinite),
+                          child: CustomPaint(
+                            painter: _PanPainter(f),
+                            size: Size.infinite,
+                          ),
                         ),
                         if (!compact) ...[
                           const SizedBox(width: 4),
@@ -905,7 +1158,12 @@ class _PanBarState extends State<PanBar> {
                             child: Text(
                               panText(phys),
                               textAlign: TextAlign.right,
-                              style: Tx.value.copyWith(fontSize: 10.5, color: phys.round() == 0 ? AppColors.textDim : AppColors.text),
+                              style: Tx.value.copyWith(
+                                fontSize: 10.5,
+                                color: phys.round() == 0
+                                    ? AppColors.textDim
+                                    : AppColors.text,
+                              ),
                             ),
                           ),
                         ],
@@ -929,7 +1187,10 @@ class _PanPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final cy = size.height / 2;
-    final track = RRect.fromRectAndRadius(Rect.fromLTWH(0, cy - 3, size.width, 6), const Radius.circular(3));
+    final track = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, cy - 3, size.width, 6),
+      const Radius.circular(3),
+    );
     canvas.drawRRect(track, Paint()..color = AppColors.well);
     canvas.drawRRect(
       track,
@@ -939,12 +1200,25 @@ class _PanPainter extends CustomPainter {
     );
     final cx = size.width / 2;
     final x = f * size.width;
-    canvas.drawRect(Rect.fromLTRB(math.min(cx, x), cy - 2, math.max(cx, x), cy + 2), Paint()..color = AppColors.accent.withValues(alpha: 0.8));
+    canvas.drawRect(
+      Rect.fromLTRB(math.min(cx, x), cy - 2, math.max(cx, x), cy + 2),
+      Paint()..color = AppColors.accent.withValues(alpha: 0.8),
+    );
     // tacca del centro
-    canvas.drawRect(Rect.fromLTWH(cx - 0.75, cy - 6, 1.5, 12), Paint()..color = AppColors.textDim);
+    canvas.drawRect(
+      Rect.fromLTWH(cx - 0.75, cy - 6, 1.5, 12),
+      Paint()..color = AppColors.textDim,
+    );
     // indicatore della posizione
     canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(x.clamp(3, size.width - 3), cy), width: 5, height: 12), const Radius.circular(2)),
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset(x.clamp(3, size.width - 3), cy),
+          width: 5,
+          height: 12,
+        ),
+        const Radius.circular(2),
+      ),
       Paint()..color = AppColors.text,
     );
   }
@@ -955,11 +1229,20 @@ class _PanPainter extends CustomPainter {
 
 /// Inserimento numerico di un valore (clic sul valore di una manopola): il valore fisico
 /// digitato viene convertito con la stessa quantizzazione del parametro.
-Future<void> editValue(BuildContext context, AppController ctl, String path, String label) async {
+Future<void> editValue(
+  BuildContext context,
+  AppController ctl,
+  String path,
+  String label,
+) async {
   final spec = ctl.state.specOf(path);
   if (spec == null || spec.kind == ParamKind.enumeration) return;
   final cur = ctl.state.getPhysical(path);
-  final c = TextEditingController(text: cur == null ? '' : (cur.abs() >= 100 ? cur.toStringAsFixed(0) : cur.toStringAsFixed(2)));
+  final c = TextEditingController(
+    text: cur == null
+        ? ''
+        : (cur.abs() >= 100 ? cur.toStringAsFixed(0) : cur.toStringAsFixed(2)),
+  );
   final r = await showDialog<double>(
     context: context,
     builder: (d) => AlertDialog(
@@ -969,14 +1252,30 @@ Future<void> editValue(BuildContext context, AppController ctl, String path, Str
         child: TextField(
           controller: c,
           autofocus: true,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-          decoration: InputDecoration(suffixText: spec.unit, helperText: tr('Valore attuale: {p0}', {'p0': spec.display(ctl.idx(path) ?? 0)})),
-          onSubmitted: (v) => Navigator.pop(d, double.tryParse(v.replaceAll(',', '.'))),
+          keyboardType: const TextInputType.numberWithOptions(
+            decimal: true,
+            signed: true,
+          ),
+          decoration: InputDecoration(
+            suffixText: spec.unit,
+            helperText: tr('Valore attuale: {p0}', {
+              'p0': spec.display(ctl.idx(path) ?? 0),
+            }),
+          ),
+          onSubmitted: (v) =>
+              Navigator.pop(d, double.tryParse(v.replaceAll(',', '.'))),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(d), child: Text(tr('Annulla'))),
-        FilledButton(onPressed: () => Navigator.pop(d, double.tryParse(c.text.replaceAll(',', '.'))), child: Text(tr('Imposta'))),
+        TextButton(
+          onPressed: () => Navigator.pop(d),
+          child: Text(tr('Annulla')),
+        ),
+        FilledButton(
+          onPressed: () =>
+              Navigator.pop(d, double.tryParse(c.text.replaceAll(',', '.'))),
+          child: Text(tr('Imposta')),
+        ),
       ],
     ),
   );

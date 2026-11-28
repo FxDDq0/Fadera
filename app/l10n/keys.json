@@ -743,6 +743,7 @@
  "Cosa inviare",
  "Strip protette (non modificate)",
  "Continua",
+ "Fader {p0}",
  "Meter in dBFS (−60…0), tacche a 0, −6, −12, −18, −30, −40. In alto il clip: resta acceso finché non tocchi il meter. La scala accanto è quella del fader.",
  "Meter spento: posizione nel banco meter non verificata.",
  "Clic per digitare il valore · frecce: un passo · Pag su/giù: 10 passi",
