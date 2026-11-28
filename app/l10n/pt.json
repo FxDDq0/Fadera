@@ -725,5 +725,10 @@
  "Backup non riuscito ({p0}): richiamo annullato.": "Falha no backup ({p0}): chamada cancelada.",
  "Scrivi un nome.": "Digite um nome.",
  "Nome riservato: scegline un altro.": "Nome reservado: escolha outro.",
- "Esiste già un layout con questo nome.": "Já existe um layout com este nome."
+ "Esiste già un layout con questo nome.": "Já existe um layout com este nome.",
+ "Cerca un canale per nome o numero (Ctrl+F)": "Procurar um canal por nome ou número (Ctrl+F)",
+ "Cerca un canale": "Procurar um canal",
+ "Nome o numero: Kick, 12, bus 3, dca 2": "Nome ou número: Kick, 12, bus 3, dca 2",
+ "Scrivi per cercare tra canali, bus, matrici e DCA.": "Digite para procurar entre canais, buses, matrizes e DCA.",
+ "Nessun canale trovato.": "Nenhum canal encontrado."
 }

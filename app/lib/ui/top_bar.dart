@@ -105,6 +105,12 @@ class TopBar extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         _IconSquare(
+          icon: Icons.search,
+          tooltip: tr('Cerca un canale per nome o numero (Ctrl+F)'),
+          onTap: () => ctl.searchRequest.value++,
+        ),
+        const SizedBox(width: 6),
+        _IconSquare(
           icon: Icons.palette_outlined,
           tooltip: tr('Personalizzazione: temi colore, colori dei canali, layer utente, barra rapida'),
           onTap: () => showDialog(context: context, builder: (_) => PersonalizeDialog(ctl: ctl)),

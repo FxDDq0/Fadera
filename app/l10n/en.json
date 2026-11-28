@@ -725,5 +725,10 @@
  "Backup non riuscito ({p0}): richiamo annullato.": "Backup failed ({p0}): recall cancelled.",
  "Scrivi un nome.": "Enter a name.",
  "Nome riservato: scegline un altro.": "Reserved name: choose another one.",
- "Esiste già un layout con questo nome.": "A layout with this name already exists."
+ "Esiste già un layout con questo nome.": "A layout with this name already exists.",
+ "Cerca un canale per nome o numero (Ctrl+F)": "Find a channel by name or number (Ctrl+F)",
+ "Cerca un canale": "Find a channel",
+ "Nome o numero: Kick, 12, bus 3, dca 2": "Name or number: Kick, 12, bus 3, dca 2",
+ "Scrivi per cercare tra canali, bus, matrici e DCA.": "Type to search channels, buses, matrices and DCAs.",
+ "Nessun canale trovato.": "No channel found."
 }

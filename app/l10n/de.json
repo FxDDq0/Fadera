@@ -725,5 +725,10 @@
  "Backup non riuscito ({p0}): richiamo annullato.": "Sicherung fehlgeschlagen ({p0}): Abruf abgebrochen.",
  "Scrivi un nome.": "Gib einen Namen ein.",
  "Nome riservato: scegline un altro.": "Reservierter Name: wähle einen anderen.",
- "Esiste già un layout con questo nome.": "Ein Layout mit diesem Namen gibt es schon."
+ "Esiste già un layout con questo nome.": "Ein Layout mit diesem Namen gibt es schon.",
+ "Cerca un canale per nome o numero (Ctrl+F)": "Kanal nach Name oder Nummer suchen (Strg+F)",
+ "Cerca un canale": "Kanal suchen",
+ "Nome o numero: Kick, 12, bus 3, dca 2": "Name oder Nummer: Kick, 12, bus 3, dca 2",
+ "Scrivi per cercare tra canali, bus, matrici e DCA.": "Tippe, um Kanäle, Busse, Matrizen und DCAs zu durchsuchen.",
+ "Nessun canale trovato.": "Kein Kanal gefunden."
 }

@@ -70,6 +70,10 @@ KeyEventResult handleShortcut(AppController ctl, KeyEvent e) {
     ctl.undo();
     return KeyEventResult.handled;
   }
+  if (hw.isControlPressed && e.logicalKey == LogicalKeyboardKey.keyF && e is KeyDownEvent) {
+    ctl.searchRequest.value++;
+    return KeyEventResult.handled;
+  }
   if (hw.isControlPressed || hw.isAltPressed || hw.isMetaPressed) return KeyEventResult.ignored;
   ShortcutAction? action;
   for (final a in ShortcutAction.values) {

@@ -725,5 +725,10 @@
  "Backup non riuscito ({p0}): richiamo annullato.": "La copia de seguridad falló ({p0}): recuperación cancelada.",
  "Scrivi un nome.": "Escribe un nombre.",
  "Nome riservato: scegline un altro.": "Nombre reservado: elige otro.",
- "Esiste già un layout con questo nome.": "Ya existe un diseño con este nombre."
+ "Esiste già un layout con questo nome.": "Ya existe un diseño con este nombre.",
+ "Cerca un canale per nome o numero (Ctrl+F)": "Buscar un canal por nombre o número (Ctrl+F)",
+ "Cerca un canale": "Buscar un canal",
+ "Nome o numero: Kick, 12, bus 3, dca 2": "Nombre o número: Kick, 12, bus 3, dca 2",
+ "Scrivi per cercare tra canali, bus, matrici e DCA.": "Escribe para buscar entre canales, buses, matrices y DCA.",
+ "Nessun canale trovato.": "Ningún canal encontrado."
 }

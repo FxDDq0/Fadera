@@ -725,5 +725,10 @@
  "Backup non riuscito ({p0}): richiamo annullato.": "Échec de la sauvegarde ({p0}) : rappel annulé.",
  "Scrivi un nome.": "Saisis un nom.",
  "Nome riservato: scegline un altro.": "Nom réservé : choisis-en un autre.",
- "Esiste già un layout con questo nome.": "Une disposition porte déjà ce nom."
+ "Esiste già un layout con questo nome.": "Une disposition porte déjà ce nom.",
+ "Cerca un canale per nome o numero (Ctrl+F)": "Chercher une voie par nom ou numéro (Ctrl+F)",
+ "Cerca un canale": "Chercher une voie",
+ "Nome o numero: Kick, 12, bus 3, dca 2": "Nom ou numéro : Kick, 12, bus 3, dca 2",
+ "Scrivi per cercare tra canali, bus, matrici e DCA.": "Tape pour chercher parmi voies, bus, matrices et DCA.",
+ "Nessun canale trovato.": "Aucune voie trouvée."
 }

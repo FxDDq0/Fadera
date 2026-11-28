@@ -456,6 +456,69 @@ class AppController extends ChangeNotifier {
     return (n == null || n.isEmpty) ? s.label : n;
   }
 
+  /// Tutte le strip del mixer, nell'ordine della superficie.
+  static final List<StripRef> allStrips = [
+    for (var i = 1; i <= 32; i++) StripRef(StripKind.ch, i),
+    for (var i = 1; i <= 8; i++) StripRef(StripKind.auxin, i),
+    for (var i = 1; i <= 8; i++) StripRef(StripKind.fxrtn, i),
+    for (var i = 1; i <= 16; i++) StripRef(StripKind.bus, i),
+    for (var i = 1; i <= 6; i++) StripRef(StripKind.mtx, i),
+    const StripRef(StripKind.mainSt, 1),
+    const StripRef(StripKind.mainM, 1),
+    for (var i = 1; i <= 8; i++) StripRef(StripKind.dca, i),
+  ];
+
+  static final _spaces = RegExp(r'\s+');
+  static final _leadingZeros = RegExp(r' 0+(\d)');
+
+  /// Ricerca rapida (Ctrl+F): per nome della strip, per sigla ("Ch 05", "bus 3", "dca 2")
+  /// o solo per numero (canali). Prima le corrispondenze esatte, poi quelle iniziali, poi le altre.
+  List<StripRef> searchStrips(String query, {int limit = 12}) {
+    final q = query.trim().toLowerCase().replaceAll(_spaces, ' ');
+    if (q.isEmpty) return const [];
+    final n = int.tryParse(q);
+    final ranked = <(int, StripRef)>[];
+    for (final s in allStrips) {
+      final name = stripName(s).toLowerCase();
+      final label = s.label.toLowerCase();
+      // sigla senza zeri iniziali e senza spazio: "ch 5", "ch5", "bus 3", "bus3"
+      final short = label.replaceAllMapped(_leadingZeros, (m) => ' ${m.group(1)}');
+      int? rank;
+      if (n != null && s.kind == StripKind.ch && s.number == n) {
+        rank = 0;
+      } else if (q == short || q == short.replaceAll(' ', '') || q == label) {
+        rank = 0;
+      } else if (name.startsWith(q)) {
+        rank = 1;
+      } else if (name.contains(q)) {
+        rank = 2;
+      } else if (short.startsWith(q) || label.startsWith(q)) {
+        rank = 3;
+      }
+      if (rank != null) ranked.add((rank, s));
+    }
+    ranked.sort((a, b) => a.$1.compareTo(b.$1));
+    return [for (final r in ranked.take(limit)) r.$2];
+  }
+
+  /// Apre la pagina del mixer che contiene [s] e la seleziona.
+  void goToStrip(StripRef s) {
+    final l = switch (s.kind) {
+      StripKind.ch => const [Layer.ch1, Layer.ch9, Layer.ch17, Layer.ch25][(s.number - 1) ~/ 8],
+      StripKind.auxin || StripKind.fxrtn => Layer.auxFx,
+      StripKind.bus => Layer.bus,
+      StripKind.mtx || StripKind.mainSt || StripKind.mainM => Layer.mtx,
+      StripKind.dca => Layer.dca,
+    };
+    layer = _normalizeLayer(l);
+    page = AppPage.mixer;
+    selected = s;
+    notifyListeners();
+  }
+
+  /// Richiesta di aprire la ricerca rapida (scorciatoia Ctrl+F o pulsante della barra).
+  final searchRequest = ValueNotifier<int>(0);
+
   void select(StripRef s) {
     if (s == selected) return;
     selected = s;
@@ -773,6 +836,7 @@ class AppController extends ChangeNotifier {
     panelTab.dispose();
     panelRequest.dispose();
     noticeTick.dispose();
+    searchRequest.dispose();
     _epoch++;
     final log = _logFile;
     _logFile = null;

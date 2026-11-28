@@ -7,6 +7,7 @@ import 'brand.g.dart';
 import 'capture.dart';
 import 'controller/app_controller.dart';
 import 'error_handling.dart';
+import 'ui/dialogs/strip_search_dialog.dart';
 import 'controller/shortcuts.dart';
 import 'theme.dart';
 import 'ui/master_and_quick.dart';
@@ -100,15 +101,29 @@ class _HomeScreenState extends State<HomeScreen> {
       return AppExitResponse.exit;
     });
     widget.ctl.noticeTick.addListener(_showNotices);
+    widget.ctl.searchRequest.addListener(_openSearch);
     WidgetsBinding.instance.addPostFrameCallback((_) => _showNotices());
   }
 
   @override
   void dispose() {
     widget.ctl.noticeTick.removeListener(_showNotices);
+    widget.ctl.searchRequest.removeListener(_openSearch);
     _lifecycle.dispose();
     _clock.dispose();
     super.dispose();
+  }
+
+  bool _searchOpen = false;
+
+  Future<void> _openSearch() async {
+    if (!mounted || _searchOpen) return;
+    _searchOpen = true;
+    try {
+      await showDialog<void>(context: context, builder: (_) => StripSearchDialog(ctl: widget.ctl));
+    } finally {
+      _searchOpen = false;
+    }
   }
 
   void _showNotices() {
