@@ -31,7 +31,7 @@ const int kX32Port = 10023;
 /// (le risposte arrivano dalla rete e un dispositivo qualunque può fingersi un mixer).
 String cleanInfoText(String s) {
   // controllo (Cc), formato invisibile (Cf: direzione del testo, larghezza zero) e separatori di riga
-  final t = s.replaceAll(RegExp(r'[\p{Cc}\p{Cf}  ]+', unicode: true), ' ').replaceAll(RegExp(r' {2,}'), ' ').trim();
+  final t = s.replaceAll(RegExp(r'[\p{Cc}\p{Cf}\u2028\u2029]+', unicode: true), ' ').replaceAll(RegExp(r' {2,}'), ' ').trim();
   final r = t.runes.toList();
   return r.length > 64 ? String.fromCharCodes(r.take(64)) : t;
 }

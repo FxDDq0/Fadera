@@ -6,6 +6,11 @@
 /// Agisce solo sulle righe inviate dal PC, non sulle impostazioni safe del mixer.
 library;
 
+// Espressioni regolari compilate una volta sola (prima ricreate a ogni chiamata, migliaia all'avvio).
+final _re1 = RegExp(r'\s');
+final _re2 = RegExp(r'^/(ch|auxin)/\d\d/preamp');
+final _re3 = RegExp(r'^/(ch|auxin|fxrtn)/');
+
 enum ScopeCategory {
   inputs('Canali, aux in, FX return (mix, EQ, dinamiche…)'),
   preamp('Preamplificatori (preamp, headamp)'),
@@ -38,9 +43,9 @@ class RecallScope {
   static ScopeCategory? categoryOf(String line) {
     final t = line.trimLeft();
     if (!t.startsWith('/') || t.startsWith('/-')) return null;
-    final path = t.split(RegExp(r'\s')).first;
-    if (RegExp(r'^/(ch|auxin)/\d\d/preamp').hasMatch(path) || path.startsWith('/headamp')) return ScopeCategory.preamp;
-    if (RegExp(r'^/(ch|auxin|fxrtn)/').hasMatch(path)) return ScopeCategory.inputs;
+    final path = t.split(_re1).first;
+    if (_re2.hasMatch(path) || path.startsWith('/headamp')) return ScopeCategory.preamp;
+    if (_re3.hasMatch(path)) return ScopeCategory.inputs;
     if (path.startsWith('/bus/')) return ScopeCategory.buses;
     if (path.startsWith('/mtx/') || path.startsWith('/main/')) return ScopeCategory.matrixMain;
     if (path.startsWith('/dca/')) return ScopeCategory.dca;
@@ -57,7 +62,7 @@ class RecallScope {
   bool accepts(String line) {
     final c = categoryOf(line);
     if (c == null || !enabled.contains(c)) return false;
-    final path = line.trimLeft().split(RegExp(r'\s')).first;
+    final path = line.trimLeft().split(_re1).first;
     final m = _stripRe.firstMatch(path);
     if (m != null && safeStrips.contains(m.group(1))) return false;
     return true;
