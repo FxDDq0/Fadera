@@ -73,6 +73,6 @@ void main() {
     expect(t.length, lessThanOrEqualTo(64));
     expect(t, startsWith('Mixer Finto'));
     // direzione del testo invertita e caratteri a larghezza zero tolti
-    expect(cleanInfoText('X32‮esrever​'), 'X32 esrever');
+    expect(cleanInfoText('X32\u202Eesrever\u200B'), 'X32 esrever');
   });
 }
